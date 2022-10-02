@@ -13,7 +13,7 @@
 #---------------------------------------------------------------------------------------------------------------#
 #   initialization and functions for MSN:                                                                       #
 #   WI = WeatherInfo(mode="msn")        # no API-key required, alternatively: (mode="msn", apikey=None)         #
-#   geodata = WI.getCitylist(...)       # or set directly tuple geodata = e.g. ('Berlin', '0', '0')             #
+#   geodata = WI.getCitylist(...)       # or set directly tuple geodata = e.g. ('Berlin', 0, 0)                 #
 #   msnxmlData = WI.getmsnxml()         # get XML-string (similar to the old MSN-Weather API)                   #
 #   msnxmlData = WI.writemsnxml()       # get XML-string & write as file (similar to the old MSN-Weater API)    #
 #---------------------------------------------------------------------------------------------------------------#
@@ -215,7 +215,7 @@ class Weatherinfo:
 					city = hit["name"] if "name" in hit else hit["address"]["text"]
 					state = ""
 					country = ""
-					citylist.append((city + state + country, "0", "0"))
+					citylist.append((city + state + country, 0, 0))
 		elif self.mode == "owm":
 			exceptions = {"br": "pt_br", "se": "sv, se", "es": "sp, es", "ua": "ua, uk", "cn": "zh_cn"}
 			if scheme[:2] in exceptions:
@@ -237,7 +237,7 @@ class Weatherinfo:
 				city = hit["local_names"][scheme[:2]] if "local_names" in hit and scheme[:2] in hit["local_names"] else hit["name"]
 				state = ", " + hit["state"] if "state" in hit else ""
 				country = ", " + hit["country"].upper() if "country" in hit else ""
-				citylist.append((city + state + country, str(hit["lon"]), str(hit["lat"])))
+				citylist.append((city + state + country, hit["lon"], hit["lat"]))
 		else:
 			self.error = "[%s] ERROR in module 'start': unknown mode." % MODULE_NAME
 			return
@@ -742,8 +742,8 @@ def main(argv):
 	if citylist and len(citylist) > 1 and not quiet:
 		print("Found the following cities/areas:")
 		for idx, item in enumerate(citylist):
-			lon = " [lon=%s" % item[1] if float(item[1]) != 0.0 else ""
-			lat = ", lat=%s]" % item[2] if float(item[2]) != 0.0 else ""
+			lon = " [lon=%s" % item[1] if item[1] != 0.0 else ""
+			lat = ", lat=%s]" % item[2] if item[2] != 0.0 else ""
 			print("%s = %s%s%s" % (idx + 1, item[0], lon, lat))
 		choice = input("Select (1-%s)? : " % len(citylist))[:1]
 		index = ord(choice) - 48 if len(choice) > 0 else -1
