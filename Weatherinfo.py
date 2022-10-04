@@ -166,7 +166,7 @@ class Weatherinfo:
 	def getvalue(self, value, idx=1):
 		return "N/A" if value is None else value.group(idx)
 
-	def directionsign(self, degree):  # leading chars for font 'MetrixIcons.ttf'
+	def directionsign(self, degree):
 		return "." if degree < 0 else ["↑ N", "↗ NE", "→ E", "↘ SE", "↓ S", "↙ SW", "← W", "↖ NW"][round(degree % 360 / 45 % 7.5)]
 
 	def convert2icon(self, src, code):
@@ -245,6 +245,9 @@ class Weatherinfo:
 
 	def start(self, geodata=None, units="metric", scheme="de-de", callback=None, reduced=False):
 		self.geodata = geodata
+		if geodata is None:
+			self.error = "[%s] ERROR in module 'start': geodata is None." % MODULE_NAME
+			return
 		self.units = units.lower()
 		self.scheme = scheme.lower()
 		if self.mode == "msn":
@@ -280,9 +283,7 @@ class Weatherinfo:
 						"ja-jp": "ja-jp/weather/forecast/", "ko-kr": "ko-kr/weather/forecast/", "th-th": "th-th/weather/forecast/",
 						"vi-vn": "vi-vn/weather/forecast/"
 						}
-		link = None
-		if self.scheme in localisation:
-			link = "http://www.msn.com/%s" % localisation.get(self.scheme, "en-us/weather/forecast/")  # fallback to general localized url
+		link = "http://www.msn.com/%s" % localisation.get(self.scheme, "en-us/weather/forecast/")  # fallback to general localized url
 		degunit = "F" if self.units == "imperial" else "C"
 		if callback is not None:
 			print("[%s] accessing MSN for weatherdata..." % MODULE_NAME)
@@ -303,7 +304,7 @@ class Weatherinfo:
 		svgsrc = self.getvalue(todayData, 1)
 		svgdesc = self.getvalue(todayData, 2)
 		svgdata = findall('<img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
-		# Create DICT "jsonData" from JSON-string and add some useful infos #####################################################
+		# Create DICT "jsonData" from JSON-string and add some useful infos
 		start = '<script id="redux-data" type="application/json">'
 		startpos = output.find(start)
 		endpos = output.find("</script>", startpos)
@@ -762,19 +763,20 @@ def main(argv):
 					print("Found city/area: %s" % info["city"]["name"])
 				else:
 					print("Using city/area: %s [lon=%s, lat=%s]" % (info['city'], info["lon"], info["lat"]))
+		successtext = "File '%s' was successfully created."
 		if json:
 			weather.writejson(json)
 			if not quiet:
-				print("File '%s' was successfully created." % json)
+				print(successtext % json)
 		if reduced:
 			weather.writereducedjson(reduced)
 			if not quiet:
-				print("File '%s' was successfully created." % reduced)
+				print(successtext % reduced)
 		if xml:
 			if mode == "msn":
 				weather.writemsnxml(xml)
 				if not quiet:
-					print("File '%s' was successfully created." % xml)
+					print(successtext % xml)
 			else:
 				if not quiet:
 					print("ERROR: XML is only supported in mode 'msn'.\nFile '%s' was not created..." % xml)
