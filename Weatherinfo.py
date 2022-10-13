@@ -2,39 +2,43 @@
 #                                                                                                               #
 #   Weatherinfo for openTV is a multi-platform tool (tested for Enigma2 & Windows, but others very likely)      #
 #   Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022                                                  #
-#   Purpose: get weather forecasts from MSN-Weather and/or OpenWeatherMap (OWM)                                 #
+#   Purpose: get weather forecasts from msnWeather (MSN) and/or OpenWeatherMap (OWM)                            #
 #   Output : DICT (MSN & OWM), JSON-file (MSN & OWM), XML-string (MSN only), XML-file (MSN only)                #
-#   Learn more about the tool by running it from the shell: 'python Weatherinfo.py -h'                          #
+#   Learn more about the tool by running it in the shell: "python Weatherinfo.py -h"                            #
 #---------------------------------------------------------------------------------------------------------------#
 #   This plugin is licensed under the GNU version 3.0 <https://www.gnu.org/licenses/gpl-3.0.en.html>.           #
 #   This plugin is NOT free software. It is open source, you are allowed to modify it (if you keep the license),#
 #   but it may not be commercially distributed. Advertise with this tool is not allowed.                        #
 #   For other uses, permission from the authors is necessary.                                                   #
 #---------------------------------------------------------------------------------------------------------------#
-#   initialization and functions for MSN:                                                                       #
-#   WI = WeatherInfo(mode="msn")        # no API-key required, alternatively: (mode="msn", apikey=None)         #
-#   geodata = WI.getCitylist(...)       # or set directly tuple geodata = e.g. ('Berlin', 0, 0)                 #
-#   msnxmlData = WI.getmsnxml()         # get XML-string (similar to the old MSN-Weather API)                   #
-#   msnxmlData = WI.writemsnxml()       # get XML-string & write as file (similar to the old MSN-Weater API)    #
+#   definitions:                                                                                                #
+#   geocode = "13.4105,52.5244"                 # string consisting of "longitude,latitude"                     #
+#   geodata = ("Berlin, DE", 13.4105,52.5244)   # tuple consisting of cityname and its "geocode"                #
+#   geolist = ["city1",lon,lat),("city2",...)]  # list of tuples "geodata" (e.g. search results)                #
 #---------------------------------------------------------------------------------------------------------------#
-#   initialization for OWM:                                                                                     #
-#   WI = WeatherInfo(mode="owm", apikey='my_apikey')                                                            #
-#   {continue only with 'geodata = WI.getCitylist(...)', no alternatives possible, data (lon/lat) is required   #
+#   usage for MSN only:                                                                                         #
+#   WI = WeatherInfo(mode="msn")        # initialization in case of "msn" (no API-key required)                 #
+#   msnxmlData = WI.getmsnxml()         # get XML-string (similar to old msnWeather API-server)                 #
+#   msnxmlData = WI.writemsnxml()       # get XML-string (similar to old msnWeather API-server) & write as file #
 #---------------------------------------------------------------------------------------------------------------#
-#   common usage for MSN and OWM                                                                                #
-#   geodata = WI.getCitylist(cityname='Berlin', scheme="en-us")     # get a list of searching hits (max. 9)     #
-#   WI.start(geodata=geodata, units="metric", scheme="en-us", callback=MyCallback)                              #
-#   DICT = WI.getinfo()                 # alternatively: if WI.ready: DICT = WI.info                            #
-#   WI.writejson(filename)              # writes DICT as JSON-string in a file                                  #
+#   usage for OWM only:                                                                                         #
+#   WI = WeatherInfo(mode="owm", apikey="my_apikey")       # initialization in case of "owm" (API-key required) #
+#   geolist = WI.getCitylistbyGeocode(geocode, scheme)     # get "geolist" of search results in local language  #
+#   geodata = WI.getCitybyID("2950159") # get tuple "geodata" from owm's DEPRECATED cityID (2950159=Berlin,DE)  #
+#---------------------------------------------------------------------------------------------------------------#
+#   common usage for MSN and OWM:                                                                               #
+#   geolist = WI.getCitylist(cityname, scheme="en-us")     # get "geolist" of search results (max. 9)           #
+#   WI.start(geodata=geodata, cityID=None, units="metric", scheme="en-us", reduced=True, callback=MyCallback)   #
+#   DICT = WI.getinfo()                 # alternatively: DICT = WI.info                                         #
+#   WI.writejson(filename)              # writes full DICT as full JSON-string as file                          #
 #   DICT = WI.getreducedinfo()          # get reduced DICT for a simple forecast (e.g. Metrix-Weather)          #
 #   WI.writereducedjson(filename)       # get reduced DICT & write reduced JSON-string as file                  #
-#   WI.error                            # returns None when everything ist OK otherwise a detailed error msg    #
+#   WI.error                            # returns None when everything is OK otherwise a detailed error message #
 #---------------------------------------------------------------------------------------------------------------#
 #   Interactive call is also possible by setting WI.start(..., callback=None)  > example: see 'def main(argv)'  #
 #                                                                                                               #
 #################################################################################################################
 
-from operator import ge
 from sys import exit, argv
 from json import dump, loads
 from re import search, findall
@@ -138,9 +142,12 @@ class Weatherinfo:
 		self.parser = None
 		self.geodata = None
 		self.units = None
+		self.callback = None
+		self.reduced = False
 		self.setmode(newmode, apikey)
 
 	def setmode(self, newmode="msn", apikey=None):
+		self.error = None
 		newmode = newmode.lower()
 		if newmode in ("msn", "owm"):
 			if self.mode != newmode:
@@ -149,7 +156,7 @@ class Weatherinfo:
 					self.apikey = apikey
 					self.parser = self.msnparser
 				elif newmode == "owm":
-					if apikey is None:
+					if not apikey:
 						self.parser = None
 						self.error = "[%s] ERROR in module 'setmode': API-Key for mode '%s' is missing!" % (MODULE_NAME, newmode)
 						return self.error
@@ -162,14 +169,12 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'setmode': unknown mode '%s'" % (MODULE_NAME, newmode)
 			return self.error
 
-	def getvalue(self, value, idx=1):
-		return "N/A" if value is None else value.group(idx)
-
 	def directionsign(self, degree):
 		return "." if degree < 0 else ["↑ N", "↗ NE", "→ E", "↘ SE", "↓ S", "↙ SW", "← W", "↖ NW"][round(degree % 360 / 45 % 7.5)]
 
 	def convert2icon(self, src, code):
-		if code is None:
+		self.error = None
+		if not code:
 			self.error = "[%s] ERROR in module 'convert2icon': input code value is 'None'" % MODULE_NAME
 			return
 		code = str(code).strip()
@@ -192,7 +197,8 @@ class Weatherinfo:
 		return result
 
 	def getCitylist(self, cityname=None, scheme="de-de"):
-		if cityname is None:
+		self.error = None
+		if not cityname:
 			self.error = "[%s] ERROR in module 'getCitylist': missing cityname." % MODULE_NAME
 			return
 
@@ -202,7 +208,7 @@ class Weatherinfo:
 			linkcode = "68747470733a2f2f7777772e62696e672e636f6d2f6170692f76362f506c616365732f4175746f537567676573743f61707069643d257326636f756e743d313526713d2573267365746d6b743d2573267365746c616e673d25737"
 			link = bytes.fromhex(linkcode[:-1]).decode('utf-8') % (apikey, cityname, scheme, scheme)
 			jsonData = self.apiserver(link)
-			if jsonData is None:
+			if not jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist': no MSN data found." % MODULE_NAME
 				return
 			count = 0
@@ -230,7 +236,7 @@ class Weatherinfo:
 			country = "".join(items[-1:]).strip().upper() if len(items) > 1 else None
 			link = "http://api.openweathermap.org/geo/1.0/direct?q=%s,%s&lang=%s&limit=15&appid=%s" % (city, country, scheme[:2], self.apikey)
 			jsonData = self.apiserver(link)
-			if jsonData is None:
+			if not jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist': no OWM data found." % MODULE_NAME
 				return
 			count = 0
@@ -253,34 +259,45 @@ class Weatherinfo:
 			return
 		return citylist
 
-	def start(self, geodata=None, units="metric", scheme="de-de", callback=None, reduced=False):
+	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", callback=None, reduced=False):
+		self.error = None
 		self.geodata = geodata
+		self.callback = callback
+		self.reduced = reduced
+		if cityID:
+			if self.mode.startswith("owm"):
+				return self.getCitybyID(cityID=cityID)
+			else:
+				self.error = "[%s] ERROR in module 'start': wrong mode '%s'. cityID only works with 'owm'." % (MODULE_NAME, self.mode)
 		if geodata:
 			self.units = units.lower()
 			self.scheme = scheme.lower()
 			if self.mode == "msn":
-				if geodata[0] is None:
+				if not geodata[0]:
 					self.error = "[%s] ERROR in module 'start': missing cityname." % MODULE_NAME
 			elif self.mode == "owm":
-				if geodata[1] is None or geodata[2] is None:
+				if not geodata[1] or not geodata[2]:
 					self.error = "[%s] ERROR in module 'start': missing geodata." % MODULE_NAME
 			else:
 				self.error = "[%s] ERROR in module 'start': unknown mode." % MODULE_NAME
 		else:
 			self.error = "[%s] ERROR in module 'start': geodata is None." % MODULE_NAME
-
 		if callback:
 			if self.error:
 				callback(None, self.error)
 			else:
-				callInThread(self.parser, callback, reduced)
+				callInThread(self.parser)
 		else:
 			if self.error:
 				return
-			info = self.parser(callback, reduced)
+			info = self.parser()
 			return None if self.error else info
 
-	def msnparser(self, callback=None, reduced=False):
+	def stop(self):
+		self.error = None
+		self.callback = None
+
+	def msnparser(self):
 		self.error = None
 		self.info = None
 		# some pre-defined localized URLs
@@ -294,7 +311,7 @@ class Weatherinfo:
 						}
 		link = "http://www.msn.com/%s" % localisation.get(self.scheme, "en-us/weather/forecast/")  # fallback to general localized url
 		degunit = "F" if self.units == "imperial" else "C"
-		if callback is not None:
+		if self.callback is not None:
 			print("[%s] accessing MSN for weatherdata..." % MODULE_NAME)
 		link += "in-%s?weadegreetype=%s" % (quote(self.geodata[0]), degunit)
 		try:
@@ -302,10 +319,10 @@ class Weatherinfo:
 			response.raise_for_status()
 		except exceptions.RequestException as err:
 			self.error = "[%s] ERROR in module 'apiserver': '%s" % (MODULE_NAME, str(err))
-			if callback:
-				callback(None, self.error)
+			if self.callback:
+				self.callback(None, self.error)
 			return
-		if callback is not None:
+		if self.callback:
 			print("[%s] accessing MSN successful." % MODULE_NAME)
 		try:
 			output = response.content.decode("utf-8")
@@ -313,8 +330,8 @@ class Weatherinfo:
 			endpos = output.find('</script></div>')
 			bereich = output[startpos:endpos]
 			todayData = search('<div class="iconTempPartContainer-E1_1"><img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
-			svgsrc = self.getvalue(todayData, 1)
-			svgdesc = self.getvalue(todayData, 2)
+			svgsrc = todayData.group(1) if todayData else "N/A"
+			svgdesc = todayData.group(2) if todayData else "N/A"
 			svgdata = findall('<img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
 			# Create DICT "jsonData" from JSON-string and add some useful infos
 			start = '<script id="redux-data" type="application/json">'
@@ -335,10 +352,11 @@ class Weatherinfo:
 					jsonData["currentCondition"]["image"]["svgsrc"] = svgsrc
 					jsonData["currentCondition"]["image"]["svgdesc"] = svgdesc
 					iconCode = self.convert2icon("MSN", self.msnPvdr[jsonData["currentCondition"]["pvdrIcon"]])
-					jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA")
-					jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")")
-					jsonData["currentCondition"]["day"] = currdate.strftime("%A")
-					jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
+					if iconCode:
+						jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA")
+						jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")")
+						jsonData["currentCondition"]["day"] = currdate.strftime("%A")
+						jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
 					for idx, forecast in enumerate(jsonData["forecast"][:-2]):  # last two entries are not usable
 						forecast["deepLink"] = link + "&day=%s" % (idx + 1)  # replaced by minimized link
 						forecast["date"] = (currdate + timedelta(days=idx)).strftime("%Y-%m-%d")
@@ -349,22 +367,24 @@ class Weatherinfo:
 							forecast["image"]["svgsrc"] = "N/A"
 							forecast["image"]["svgdesc"] = "N/A"
 						iconCodes = self.convert2icon("MSN", self.msnPvdr[forecast["pvdrIcon"]])
-						forecast["yahooCode"] = iconCodes.get("yahooCode", "NA")
-						forecast["meteoCode"] = iconCodes.get("meteoCode", ")")
-						forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
-						forecast["shortDay"] = (currdate + timedelta(days=idx)).strftime("%a")
+						if iconCodes:
+							forecast["yahooCode"] = iconCodes.get("yahooCode", "NA")
+							forecast["meteoCode"] = iconCodes.get("meteoCode", ")")
+							forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
+							forecast["shortDay"] = (currdate + timedelta(days=idx)).strftime("%a")
 				self.info = jsonData
 			else:
 				self.error = "[%s] ERROR in module 'msnparser': expected data not found." % MODULE_NAME
 		except Exception as err:
 			self.error = "[%s] ERROR in module 'msnparser': general error. %s" % (MODULE_NAME, str(err))
-		if callback:
-			callback(self.getreducedinfo() if reduced else self.info, self.error)
+		if self.callback:
+			self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		else:
 			return self.info
 
 	def writejson(self, filename):
-		if self.info is None:
+		self.error = None
+		if not self.info:
 			try:
 				with open(filename, "w") as f:
 					dump(self.info, f)
@@ -374,6 +394,7 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'writejson': no data found." % MODULE_NAME
 
 	def getmsnxml(self):  # only MSN supported
+		self.error = None
 		try:
 			root = Element("weatherdata")
 			root.set("xmlns:xsd", "http://www.w3.org/2001/XMLSchema")
@@ -426,6 +447,7 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'getmsnxml': general error. %s" % (MODULE_NAME, str(err))
 
 	def writemsnxml(self, filename):  # only MSN supported
+		self.error = None
 		xmlData = self.getmsnxml()
 		if xmlData:
 			xmlstring = tostring(xmlData, encoding="utf-8", method="html")
@@ -438,6 +460,7 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'writemsnxml': no data found." % MODULE_NAME
 
 	def apiserver(self, link):
+		self.error = None
 		if link:
 			try:
 				response = get(link)
@@ -456,53 +479,118 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'apiserver': missing link." % MODULE_NAME
 		return None
 
-	def owmparser(self, callback=None, reduced=False):
+	def owmparser(self):
 		self.error = None
 		self.info = None
-		if self.geodata is None:
+		if not self.geodata:
 			self.error = "[%s] ERROR in module 'owmparser': missing geodata." % MODULE_NAME
-			if callback:
-				callback(None, self.error)
+			if self.callback:
+				self.callback(None, self.error)
 			return
 		if not self.apikey:
 			self.error = "[%s] ERROR in module' owmparser': API-key is missing!" % MODULE_NAME
-			if callback:
-				callback(None, self.error)
+			if self.callback:
+				self.callback(None, self.error)
 			return
 		link = "https://api.openweathermap.org/data/2.5/onecall?&lon=%s&lat=%s&units=%s&exclude=hourly,minutely&lang=%s&appid=%s" % (self.geodata[1], self.geodata[2], self.units, self.scheme[:2], self.apikey)
-		if callback is not None:
+		if self.callback:
 			print("[%s] accessing OWM for weatherdata..." % MODULE_NAME)
 		jsonData = self.apiserver(link)
 		if jsonData:
-			if callback is not None:
+			if self.callback:
 				print("[%s] accessing OWM successful." % MODULE_NAME)
 			try:
 				jsonData["city"] = self.geodata[0]  # add some missing info
 				timestamp = jsonData["current"]["dt"]
 				jsonData["current"]["day"] = datetime.fromtimestamp(timestamp).strftime("%A")
 				jsonData["current"]["shortDay"] = datetime.fromtimestamp(timestamp).strftime("%a")
-				iconCodes = self.convert2icon("OWM", jsonData["current"]["weather"][0]["id"])
-				jsonData["current"]["weather"][0]["yahooCode"] = iconCodes.get("yahooCode", "NA")
-				jsonData["current"]["weather"][0]["meteoCode"] = iconCodes.get("meteoCode", ")")
+				iconCode = self.convert2icon("OWM", jsonData["current"]["weather"][0]["id"])
+				if iconCode:
+					jsonData["current"]["weather"][0]["yahooCode"] = iconCode.get("yahooCode", "NA")
+					jsonData["current"]["weather"][0]["meteoCode"] = iconCode.get("meteoCode", ")")
 				for forecast in jsonData["daily"]:
 					timestamp = forecast["dt"]
 					forecast["day"] = datetime.fromtimestamp(timestamp).strftime("%A")
 					forecast["shortDay"] = datetime.fromtimestamp(timestamp).strftime("%a")
 					iconCodes = self.convert2icon("OWM", forecast["weather"][0]["id"])
-					forecast["weather"][0]["yahooCode"] = iconCodes.get("yahooCode", "NA")
-					forecast["weather"][0]["meteoCode"] = iconCodes.get("meteoCode", ")")
+					if iconCodes:
+						forecast["weather"][0]["yahooCode"] = iconCodes.get("yahooCode", "NA")
+						forecast["weather"][0]["meteoCode"] = iconCodes.get("meteoCode", ")")
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'owmparser': general error. %s" % (MODULE_NAME, str(err))
 				jsonData = None
 		else:
-			self.error = "[%s] ERROR in module 'owmparser': no data." % (MODULE_NAME)
+			self.error = "[%s] ERROR in module 'owmparser': no data." % MODULE_NAME
 		self.info = jsonData
-		if callback:
-			callback(self.getreducedinfo() if reduced else self.info, self.error)
+		if self.callback:
+			self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		else:
 			return self.info
 
+	def getCitybyID(self, cityID=None):
+		self.error = None
+		if self.mode != "owm":
+			self.error = "[%s] ERROR in module 'getCitybyID': unsupported mode '%s', only mode 'owm' is supported" % (MODULE_NAME, self.mode)
+			return
+		if not cityID:
+			self.error = "[%s] ERROR in module 'getCitybyID': missing cityID" % MODULE_NAME
+			return
+		link = "http://api.openweathermap.org/data/2.5/forecast?id=%s&cnt=1&appid=%s" % (cityID, self.apikey)
+		if self.callback:
+			print("[%s] accessing OWM for cityID..." % MODULE_NAME)
+		jsonData = self.apiserver(link)
+		if jsonData:
+			if self.callback:
+				print("[%s] accessing OWM successful." % MODULE_NAME)
+			try:
+				cityData = jsonData.get("city", {})
+				city = cityData.get("name", "N/A")
+				lon = cityData.get("coord", {}).get("lon", "N/A")
+				lat = cityData.get("coord", {}).get("lat", "N/A")
+				return (city, lon, lat)
+			except Exception as err:
+				self.error = "[%s] ERROR in module 'getCitybyID': general error. %s" % (MODULE_NAME, str(err))
+				return
+		else:
+			self.error = "[%s] ERROR in module 'getCitybyID': no city found" % MODULE_NAME
+
+	def getCitylistbyGeocode(self, geocode=None, scheme="de-de"):
+		self.error = None
+		if geocode:
+			lon = geocode.split(",")[0].strip()
+			lat = geocode.split(",")[1].strip()
+		else:
+			lon = None
+			lat = None
+		if not self.mode.startswith("owm"):
+			self.error = "[%s] ERROR in module 'getCitylistbyGeocode': unsupported mode '%s', only mode 'owm' is supported" % (MODULE_NAME, self.mode)
+			return
+		if not lon or not lat:
+			self.error = "[%s] ERROR in module 'getCitylistbyGeocode': incomplete or missing coordinates" % MODULE_NAME
+			return
+		link = "http://api.openweathermap.org/geo/1.0/reverse?lon=%s&lat=%s&limit=15&appid=%s" % (lon, lat, self.apikey)
+		if self.callback:
+			print("[%s] accessing OWM for coordinates..." % MODULE_NAME)
+		jsonData = self.apiserver(link)
+		if jsonData:
+			if self.callback:
+				print("[%s] accessing OWM successful." % MODULE_NAME)
+			try:
+				citylist = []
+				for hit in jsonData:
+					city = hit.get("local_names", {}).get(scheme[:2], hit.get("name", "N/A"))
+					state = ", " + hit["state"] if "state" in hit else ""
+					country = ", " + hit["country"].upper() if "country" in hit else ""
+					citylist.append((city + state + country, hit.get("lon", "N/A"), hit.get("lat", "N/A")))
+				return citylist
+			except Exception as err:
+				self.error = "[%s] ERROR in module 'getCitylistbyCoords': general error. %s" % (MODULE_NAME, str(err))
+				return
+		else:
+			self.error = "[%s] ERROR in module 'getCitylistbyCoords': no data." % MODULE_NAME
+
 	def getreducedinfo(self):
+		self.error = None
 		reduced = dict()
 		if self.parser is not None and self.mode == "msn":
 			try:
@@ -590,8 +678,9 @@ class Weatherinfo:
 		return reduced
 
 	def writereducedjson(self, filename):
+		self.error = None
 		reduced = self.getreducedinfo()
-		if reduced is None:
+		if not reduced:
 			self.error = "[%s] ERROR in module 'writereducedjson': no data found." % MODULE_NAME
 			return
 		with open(filename, "w") as f:
@@ -599,6 +688,7 @@ class Weatherinfo:
 		return filename
 
 	def getinfo(self):
+		self.error = None
 		if not self.ready:
 			self.error = "[%s] ERROR in module 'getinfo': Parser not ready" % MODULE_NAME
 			return
@@ -626,7 +716,8 @@ class Weatherinfo:
 		return
 
 	def showConvertrules(self, src, dest):
-		if src is None:
+		self.error = None
+		if not src:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, self.SOURCES)
 			return self.error
 		if dest is not None and dest.lower() == "meteo":
@@ -664,13 +755,16 @@ def main(argv):
 	mode = "msn"
 	apikey = None
 	quiet = False
-	control = False
 	json = None
 	reduced = None
 	xml = None
-	helpstring = "Weatherinfo v1.1: try 'Weatherinfo -h' for more information"
+	specialopt = None
+	control = False
+	cityID = None
+	geocode = None
+	helpstring = "Weatherinfo v1.2: try 'Weatherinfo -h' for more information"
 	try:
-		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "control ="])
+		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:g:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "geocode =", "control ="])
 	except GetoptError:
 		print(helpstring)
 		exit(2)
@@ -686,13 +780,13 @@ def main(argv):
 			"-x, --xml <filename>\t\tFile output formatted in XML (mode 'msn' only)\n"
 			"-s, --scheme <data>\t\tCountry scheme {'de-de' is default}\n"
 			"-u, --units <data>\t\tValid units: 'imperial' or 'metric' {'metric' is default}\n"
+			"-i, --id <cityID>\t\tget cityname by precated old owm-cityID (owm only)\n"
+			"-g, --geocode <lon/lat>\t\tget cityname by 'longitude, latitude\n"
 			"-c, --control\t\t\tShow iconcode-plaintexts and conversion rules\n"
 			"-q, --quiet\t\t\tPerform without text output and select first found city")
 			exit()
 		elif opt in ("-u", "--units:"):
-			if arg == "metric":
-				units = arg
-			elif arg == "imperial":
+			if arg in ["metric", "imperial"]:
 				units = arg
 			else:
 				print("ERROR: units '%s' is invalid. Valid parameters: 'metric' or 'imperial'" % arg)
@@ -713,35 +807,55 @@ def main(argv):
 				exit()
 		elif opt in ("-a", "--apikey"):
 			apikey = arg
+		elif opt in ("-i", "--id"):
+			cityID = arg
+			specialopt = True
+		elif opt in ("-g", "--geocode"):
+			geocode = arg
+			specialopt = True
 		elif opt in ("-c", "control"):
 			control = True
+			specialopt = True
 		elif opt in ("-q", "--quiet"):
 			quiet = True
-	if len(args) == 0 and not control:
+			specialopt = True
+	if len(args) == 0 and not specialopt:
 		print(helpstring)
 		exit()
 	for part in args:
 		city += part + " "
 	city = city.strip()
-	if len(city) < 3 and not control:
+	if len(city) < 3 and not specialopt:
 		print("ERROR: Cityname too short, please use at least 3 letters!")
 		exit()
-	weather = Weatherinfo(mode, apikey)
-	if weather.error:
-		print(weather.error.replace("[__main__]", ""))
+	WI = Weatherinfo(mode, apikey)
+	if WI.error:
+		print(WI.error.replace("[__main__]", ""))
+		exit()
+	if cityID:
+		geodata = WI.getCitybyID(cityID)
+		if WI.error:
+			print(WI.error.replace("[__main__]", ""))
+		else:
+			print(geodata)
+		exit()
+	if geocode:
+		print(lon, lat, scheme)
+		citylist = WI.start(cityID=geocode, scheme=scheme)
+		print(citylist)
 		exit()
 	if control:
-		for src in weather.SOURCES + weather.DESTINATIONS:
-			if weather.showDescription(src):
-				print(weather.error.replace("[__main__]", ""))
-		for src in weather.SOURCES:
-			for dest in weather.DESTINATIONS:
-				if weather.showConvertrules(src, dest):
-					print(weather.error.replace("[__main__]", ""))
+		for src in WI.SOURCES + WI.DESTINATIONS:
+			if WI.showDescription(src):
+				print(WI.error.replace("[__main__]", ""))
+		for src in WI.SOURCES:
+			for dest in WI.DESTINATIONS:
+				if WI.showConvertrules(src, dest):
+					print(WI.error.replace("[__main__]", ""))
 		exit()
-	citylist = weather.getCitylist(city, scheme)
-	if weather.error:
-		print(weather.error.replace("[__main__]", ""))
+	citylist = WI.getCitylist(city, scheme)
+	if WI.error:
+		print(WI.error.replace("[__main__]", ""))
 		exit()
 	if len(citylist) == 0:
 		print("No cites found. Try another wording.")
@@ -760,7 +874,7 @@ def main(argv):
 		else:
 			print("Choice '%s' is not allowable (only numbers 1 to %s are valid).\nPlease try again." % (choice, len(citylist)))
 			exit()
-	info = weather.start(geodata=geodata, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
+	info = WI.start(geodata=geodata, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
 	if info is not None and not control:
 		if not quiet:
 			if mode == "msn":
@@ -772,16 +886,16 @@ def main(argv):
 					print("Using city/area: %s [lon=%s, lat=%s]" % (info['city'], info["lon"], info["lat"]))
 		successtext = "File '%s' was successfully created."
 		if json:
-			weather.writejson(json)
+			WI.writejson(json)
 			if not quiet:
 				print(successtext % json)
 		if reduced:
-			weather.writereducedjson(reduced)
+			WI.writereducedjson(reduced)
 			if not quiet:
 				print(successtext % reduced)
 		if xml:
 			if mode == "msn":
-				weather.writemsnxml(xml)
+				WI.writemsnxml(xml)
 				if not quiet:
 					print(successtext % xml)
 			else:
@@ -789,8 +903,8 @@ def main(argv):
 					print("ERROR: XML is only supported in mode 'msn'.\nFile '%s' was not created..." % xml)
 		exit()
 	else:
-		if weather.error:
-			print(weather.error.replace("[__main__]", ""))
+		if WI.error:
+			print(WI.error.replace("[__main__]", ""))
 			exit()
 
 
