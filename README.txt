@@ -4,6 +4,19 @@ Purpose: get weather forecasts from msnWeather (MSN) and/or OpenWeatherMap (OWM)
 Output : DICT (MSN & OWM), JSON-file (MSN & OWM), XML-string (MSN only), XML-file (MSN only)
 Learn more about the tool by running it in the shell: "python Weatherinfo.py -h"
 ---------------------------------------------------------------------------------------------------------
+Usage: Weatherinfo [options...] <cityname>
+-m, --mode <data>               Valid modes: 'owm' or 'msn' {'msn' is default}
+-a, --apikey <data>             API-key required for 'owm' only
+-j, --json <filename>           File output formatted in JSON (all modes)
+-r, --reduced <filename>        File output formatted in JSON (minimum infos only)
+-x, --xml <filename>            File output formatted in XML (mode 'msn' only)
+-s, --scheme <data>             Country scheme {'de-de' is default}
+-u, --units <data>              Valid units: 'imperial' or 'metric' {'metric' is default}
+-i, --id <cityID>               Get cityname by precated old owm-cityID (owm only)
+-g, --geocode <lon/lat>         Get cityname by 'longitude,latitude
+-c, --control                   Show iconcode-plaintexts and conversion rules
+-q, --quiet                     Perform without text output and select first found city
+---------------------------------------------------------------------------------------------------------
 This plugin is licensed under the GNU version 3.0 <https://www.gnu.org/licenses/gpl-3.0.en.html>.
 This plugin is NOT free software. It is open source, you are allowed to modify it (if you keep
 the license), but it may not be commercially distributed. Advertise with this tool is not allowed.
