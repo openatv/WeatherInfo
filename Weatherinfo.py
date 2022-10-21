@@ -620,7 +620,7 @@ class Weatherinfo:
 					reduced["longitude"] = str(self.info["requested"]["lon"])
 					reduced["latitude"] = str(self.info["requested"]["lat"])
 					reduced["current"] = dict()
-					isotime = isotime = datetime.now(timezone.utc).astimezone().isoformat()
+					isotime = datetime.now(timezone.utc).astimezone().isoformat()
 					reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
 					reduced["current"]["yahooCode"] = current["weather"][0]["yahooCode"]
 					reduced["current"]["meteoCode"] = current["weather"][0]["meteoCode"]
@@ -635,8 +635,8 @@ class Weatherinfo:
 					reduced["current"]["shortDay"] = current["shortDay"]
 					reduced["current"]["date"] = datetime.fromtimestamp(current["dt"]).strftime("%Y-%m-%d")
 					reduced["current"]["text"] = current["weather"][0]["description"]
-					tmin = 100  # init for today
-					tmax = -100
+					tmin = 88  # init for today
+					tmax = -88
 					yahoocode = None
 					meteocode = None
 					text = None
@@ -663,35 +663,37 @@ class Weatherinfo:
 							reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
 							reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
 							reduced["forecast"][idx]["text"] = forecast["weather"][0]["description"]
-							yahoocode = None  # init for next day
+							tmin = 88  # inits for next day
+							tmax = -88
+							yahoocode = None
 							meteocode = None
-							tmin = 100
-							tmax = -100
 							text = None
 							idx += 1
-						if "21:00:00" not in forecast["dt_txt"]:  # in case the last day has not yet been completed
-							reduced["forecast"][idx] = dict()
-							reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
-							reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
-							reduced["forecast"][idx]["minTemp"] = str(round(tmin))
-							reduced["forecast"][idx]["maxTemp"] = str(round(tmax))
-							reduced["forecast"][idx]["day"] = forecast["day"]
-							reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
-							reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
-							reduced["forecast"][idx]["text"] = forecast["weather"][0]["description"]
-						if idx < 6:  # in case there is no data available for day #5: create copy of day 4 (=fake)
-							idx + 1
-							reduced["forecast"][idx] = dict()
-							reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
-							reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
-							reduced["forecast"][idx]["minTemp"] = str(round(tmin))
-							reduced["forecast"][idx]["maxTemp"] = str(round(tmax))
-							reduced["forecast"][idx]["day"] = forecast["day"]
-							reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
-							reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
-							reduced["forecast"][idx]["text"] = forecast["weather"][0]["description"]
-						reduced["current"]["minTemp"] = reduced["forecast"][0]["minTemp"]  # finally, a few missing data for today are added
-						reduced["current"]["maxTemp"] = reduced["forecast"][0]["maxTemp"]
+					print("[Weatherinfo: idx=", idx)
+					if idx < 5:  # in case day #5 is missing: create a copy of day 4 (=fake)
+						idx + 1
+						reduced["forecast"][idx] = dict()
+						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else reduced["forecast"][idx - 1]["yahooCode"]
+						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else reduced["forecast"][idx - 1]["meteoCode"]
+						reduced["forecast"][idx]["minTemp"] = str(round(tmin)) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
+						reduced["forecast"][idx]["maxTemp"] = str(round(tmax)) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
+						nextdate = datetime.strptime(reduced["forecast"][idx - 1]["date"], "%Y-%m-%d") + timedelta(1)
+						reduced["forecast"][idx]["day"] = nextdate.strftime("%A")
+						reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
+						reduced["forecast"][idx]["date"] = nextdate.strftime("%Y-%m-%d")
+						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
+					else:  # in case day #5 is incomplete: collect what we have
+						reduced["forecast"][idx] = dict()
+						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
+						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
+						reduced["forecast"][idx]["minTemp"] = str(round(tmin)) if tmin != 88 else str(round(reduced["forecast"][idx]["minTemp"]))
+						reduced["forecast"][idx]["maxTemp"] = str(round(tmax)) if tmax != - 88 else str(round(reduced["forecast"][idx]["maxTemp"]))
+						reduced["forecast"][idx]["day"] = forecast["day"]
+						reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
+						reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
+						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
+					reduced["current"]["minTemp"] = reduced["forecast"][0]["minTemp"]  # missing data for today are added
+					reduced["current"]["maxTemp"] = reduced["forecast"][0]["maxTemp"]
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo': general error. %s" % (MODULE_NAME, str(err))
 					return
