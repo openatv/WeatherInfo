@@ -669,7 +669,6 @@ class Weatherinfo:
 							meteocode = None
 							text = None
 							idx += 1
-					print("[Weatherinfo: idx=", idx)
 					if idx < 5:  # in case day #5 is missing: create a copy of day 4 (=fake)
 						idx + 1
 						reduced["forecast"][idx] = dict()
@@ -682,7 +681,7 @@ class Weatherinfo:
 						reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
 						reduced["forecast"][idx]["date"] = nextdate.strftime("%Y-%m-%d")
 						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
-					else:  # in case day #5 is incomplete: collect what we have
+					else:  # in case day #5 is incomplete: use what we have
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
@@ -807,7 +806,7 @@ def main(argv):
 			"-s, --scheme <data>\t\tCountry scheme {'de-de' is default}\n"
 			"-u, --units <data>\t\tValid units: 'imperial' or 'metric' {'metric' is default}\n"
 			"-i, --id <cityID>\t\tGet cityname by precated old owm-cityID (owm only)\n"
-			"-g, --geocode <lon/lat>\t\tGet cityname by 'longitude,latitude\n"
+			"-g, --geocode <lon/lat>\t\tGet cityname by 'longitude,latitude'\n"
 			"-c, --control\t\t\tShow iconcode-plaintexts and conversion rules\n"
 			"-q, --quiet\t\t\tPerform without text output and select first found city")
 			exit()
