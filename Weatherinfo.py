@@ -669,8 +669,7 @@ class Weatherinfo:
 							meteocode = None
 							text = None
 							idx += 1
-					if idx < 5:  # in case day #5 is missing: create a copy of day 4 (=fake)
-						idx + 1
+					if idx == 5 and "21:00:00" in forecast["dt_txt"]:  # in case day #5 is missing: create a copy of day 4 (=fake)
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else reduced["forecast"][idx - 1]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else reduced["forecast"][idx - 1]["meteoCode"]
@@ -681,12 +680,12 @@ class Weatherinfo:
 						reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
 						reduced["forecast"][idx]["date"] = nextdate.strftime("%Y-%m-%d")
 						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
-					else:  # in case day #5 is incomplete: use what we have
+					elif idx == 5:  # in case day #5 is incomplete: use what we have
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
-						reduced["forecast"][idx]["minTemp"] = str(round(tmin)) if tmin != 88 else str(round(reduced["forecast"][idx]["minTemp"]))
-						reduced["forecast"][idx]["maxTemp"] = str(round(tmax)) if tmax != - 88 else str(round(reduced["forecast"][idx]["maxTemp"]))
+						reduced["forecast"][idx]["minTemp"] = str(round(tmin)) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
+						reduced["forecast"][idx]["maxTemp"] = str(round(tmax)) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
 						reduced["forecast"][idx]["day"] = forecast["day"]
 						reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
 						reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
@@ -752,23 +751,23 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert destination '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, self.DESTINATIONS)
 			return self.error
 		destidx = self.DESTINATIONS.index(dest)
-		print("+%s+%s+" % ("-" * 38, "-" * 38))
+		print("+%s+%s+" % ("-" * 40, "-" * 32))
 		if src.lower() == "msn":
-			print("| {0:<3} -> {1:<4}{2:<31} | {3:<5}{4:<25} |".format("PVD", "MSN", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
-			print("+%s+%s+" % ("-" * 38, "-" * 38))
+			print("| {0:<3} -> {1:<4}{2:<27} | {3:<5}{4:<25} |".format("PVD", "MSN", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
+			print("+%s+%s+" % ("-" * 40, "-" * 32))
 			for scode in self.msnPvdr:
 				dcode = self.msnCodes[self.msnPvdr[scode]][destidx]
-				print("| {0:<3} -> {1:<4}{2:<31} | {3:<5}{4:<25} |".format(scode, self.msnPvdr[scode], self.msnDescs[self.msnPvdr[scode]], dcode, ddescs[dcode]))
+				print("| {0:<3} -> {1:<4}{2:<27} | {3:<5}{4:<25} |".format(scode, self.msnPvdr[scode], self.msnDescs[self.msnPvdr[scode]], dcode, ddescs[dcode]))
 		elif src.lower() == "owm":
-			print("| {0:<5}{1:<31} | {2:<5}{3:<31} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
-			print("+%s+%s+" % ("-" * 38, "-" * 38))
+			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
+			print("+%s+%s+" % ("-" * 40, "-" * 32))
 			for scode in self.owmCodes:
 				dcode = self.owmCodes[scode][destidx]
-				print("| {0:<5}{1:<31} | {2:<5}{3:<31} |".format(scode, self.owmDescs[scode], dcode, ddescs[dcode]))
+				print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, self.owmDescs[scode], dcode, ddescs[dcode]))
 		else:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, self.SOURCES)
 			return self.error
-		print("+%s+%s+\n" % ("-" * 38, "-" * 38))
+		print("+%s+%s+\n" % ("-" * 40, "-" * 32))
 		return
 
 

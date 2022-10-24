@@ -48,6 +48,7 @@ common usage for MSN and OWM:
 geolist = WI.getCitylist(cityname, scheme)             # get search results (max. 9) from cityname
 WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 WI.setmode(newmode, apikey)         # change mode if desired (is already part of the initialization)
+WI.stop()                           # remove callback and let thread run out
 DICT = WI.getinfo()                 # alternatively: DICT = WI.info
 WI.writejson(filename)              # writes full DICT as full JSON-string as file
 DICT = WI.getreducedinfo()          # get reduced DICT
