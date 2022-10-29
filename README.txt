@@ -54,5 +54,7 @@ WI.writejson(filename)              # writes full DICT as full JSON-string as fi
 DICT = WI.getreducedinfo()          # get reduced DICT
 WI.writereducedjson(filename)       # get reduced DICT & write reduced JSON-string as file
 WI.error                            # returns None when everything is OK otherwise a detailed error msg
+WI.SOURCES = ["msn", "owm", "omw"]  # supported sourcecodes (the order must not be changed)
+WI.DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be changed)
 ---------------------------------------------------------------------------------------------------------
 Interactive call is also possible by setting WI.start(..., callback=None) # example: see "def main(argv)"
