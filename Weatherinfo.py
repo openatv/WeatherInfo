@@ -26,7 +26,7 @@ MODULE_NAME = __name__.split(".")[-1]
 
 class Weatherinfo:
 	def __init__(self, newmode="msn", apikey=None):
-		self.SOURCES = ["msn", "owm"]  # supported sourcecodes (the order must not be changed)
+		self.SOURCES = ["msn", "owm", "omw"]  # supported sourcecodes (the order must not be changed)
 		self.DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be changed)
 
 		self.msnPvdr = {'1': '1', '2': '1', '3': '1', '4': '4', '5': '4', '6': '6', '7': '7', '8': '8', '9': '9', '10': '8',
@@ -64,6 +64,13 @@ class Weatherinfo:
 						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N"),
 						"na": ("NA", ")")
 						}  # mapping: owm -> (yahoo, meteo)
+		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
+						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
+						"61": ("11", "Q"), "63": ("12", "R"), "65": ("4", "T"), "66": ("6", "R"), "67": ("7", "W"),
+						"71": ("42", "V"), "73": ("46", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("40", "Q"),
+						"81": ("47", "Q"), "82": ("45", "T"), "85": ("5", "V"), "86": ("43", "W"), "95": ("35", "P"),
+						"96": ("35", "O"), "99": ("4", "Z")
+						}  # mapping: omw -> (yahoo, meteo) (open-meteo weather uses who-codes)
 		self.msnDescs = {
 						"1": "SunnyDayV3", "2": "MostlySunnyDay", "3": "PartlyCloudyDayV3", "4": "MostlyCloudyDayV2",
 						"5": "CloudyV3", "6": "BlowingHailV2", "7": "BlowingSnowV2", "8": "LightRainV2", "9": "FogV2",
@@ -88,6 +95,14 @@ class Weatherinfo:
 						"622": "Heavy shower snow", "701": "mist", "711": "Smoke", "721": "Haze", "731": "sand/ dust whirls", "741": "fog", "751": "sand",
 						"761": "dust", "762": "volcanic ash", "771": "squalls", "781": "tornado", "800": "clear sky", "801": "few clouds: 11-25%",
 						"802": "scattered clouds: 25-50%", "803": "broken clouds: 51-84%", "804": "overcast clouds: 85-100%", "na": "not available"
+						}
+		self.omwDescs = {
+						"0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
+						"53": "moderate drizzle", "55": "dense intensity drizzle", "56": "light freezing drizzle", "57": "dense intensity freezing drizzle",
+						"61": "slight rain", "63": "moderate rain", "65": "heavy intensity rain", "66": "light freezing rain", "67": "heavy intensity freezing rain",
+						"71": "slight snow fall", "73": "moderate snow fall", "75": "heavy intensity snow fall", "77": "snow grains", "80": "slight rain showers",
+						"81": "moderate rain showers", "82": "violent rain showers", "85": "slight snow showers", "86": "heavy snow showers",
+						"95": "slight or moderate thunderstorm", "96": "thunderstorm with slight hail", "99": "thunderstorm with heavy hail"
 						}
 		self.yahooDescs = {
 						"0": "tornado", "1": "tropical storm", "2": "hurricane", "3": "severe thunderstorms", "4": "thunderstorms", "5": "mixed rain and snow",
@@ -142,7 +157,7 @@ class Weatherinfo:
 			return self.error
 
 	def directionsign(self, degree):
-		return "." if degree < 0 else ["↑ N", "↗ NE", "→ E", "↘ SE", "↓ S", "↙ SW", "← W", "↖ NW"][round(degree % 360 / 45 % 7.5)]
+		return "." if degree < 0 else ["↓ N", "↙ NE", "← E", "↖ SE", "↑ S", "↗ SW", "→ W", "↘ NW"][round(degree % 360 / 45 % 7.5)]
 
 	def convert2icon(self, src, code):
 		self.error = None
@@ -723,6 +738,8 @@ class Weatherinfo:
 			descs = self.msnDescs
 		elif src is not None and src.lower() == "owm":
 			descs = self.owmDescs
+		elif src is not None and src.lower() == "omw":
+			descs = self.omwDescs
 		elif src is not None and src.lower() == "yahoo":
 			descs = self.yahooDescs
 		elif src is not None and src.lower() == "meteo":
@@ -764,6 +781,12 @@ class Weatherinfo:
 			for scode in self.owmCodes:
 				dcode = self.owmCodes[scode][destidx]
 				print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, self.owmDescs[scode], dcode, ddescs[dcode]))
+		elif src.lower() == "omw":
+			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
+			print("+%s+%s+" % ("-" * 40, "-" * 32))
+			for scode in self.omwCodes:
+				dcode = self.omwCodes[scode][destidx]
+				print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, self.omwDescs[scode], dcode, ddescs[dcode]))
 		else:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, self.SOURCES)
 			return self.error
