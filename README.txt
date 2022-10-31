@@ -1,6 +1,6 @@
 Weatherinfo for openTV is a multiplatform tool (runs on Enigma2 & Windows and probably many others)
 Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022
-Purpose: get weather forecasts from msnWeather (MSN), Open-Meteo Weather and OpenWeatherMap (OWM)
+Purpose: get weather forecasts from msnWeather (MSN), Open-Meteo Weather (OMW) and OpenWeatherMap (OWM)
 Output : DICT (MSN, OMW & OWM), JSON-file (MSN, OMW & OWM), XML-string (MSN only), XML-file (MSN only)
 ---------------------------------------------------------------------------------------------------------
 This plugin is licensed under the GNU version 3.0 <https://www.gnu.org/licenses/gpl-3.0.en.html>.
@@ -49,7 +49,7 @@ geodata = WI.getCitybyID(2950159)                      # get geodata from owm's 
 WI.start(geodata=None, cityID=cityID, units, scheme, reduced=True, callback=MyCallback)     # by cityID
 ---------------------------------------------------------------------------------------------------------
 common usage for all:
-geolist = WI.getCitylist(cityname, scheme)             # get search results (max. 9) from cityname
+geolist = WI.getCitylist(cityname, scheme)             # get search results (max. 10) from cityname
 WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 WI.setmode(newmode, apikey)         # change mode if desired (is already part of the initialization)
 WI.stop()                           # remove callback and let thread run out

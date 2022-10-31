@@ -555,7 +555,7 @@ class Weatherinfo:
 		tempunit = "fahrenheit" if self.units == "imperial" else "celsius"
 		timezones = {"-06": "America/Anchorage", "-05": "America/Los_Angeles", "-04": "America/Denver", "-03": "America/Chicago", "-02": "America/New_York",
 	  				"-01": "America/Sao_Paulo", "+00": "Europe/London", "+01": "Europe/Berlin", "+02": "Europe/Moscow", "+03": "Africa/Cairo",
-		  			"+04": "Asia/Bangkok", "+05": "Africa/Singapore", "+06": "Africa/Tokyo", "+07": "Australis/Sydney", "+08": "Pacific/Auckland"}
+		  			"+04": "Asia/Bangkok", "+05": "Asia/Singapore", "+06": "Asia/Tokyo", "+07": "Australia/Sydney", "+08": "Pacific/Auckland"}
 		currzone = timezones.get(datetime.now(timezone.utc).astimezone().isoformat()[26:29], "Europe/Berlin")
 		if self.geodata:
 			link = "https://api.open-meteo.com/v1/forecast?longitude=%s&latitude=%s&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=%s&windspeed_unit=%s&temperature_unit=%s" % (float(self.geodata[1]), float(self.geodata[2]), currzone, windunit, tempunit)
