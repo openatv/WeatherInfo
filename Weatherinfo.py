@@ -29,17 +29,17 @@ class Weatherinfo:
 		self.SOURCES = ["msn", "owm", "omw"]  # supported sourcecodes (the order must not be changed)
 		self.DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be changed)
 
-		self.msnPvdr = {'1': '1', '2': '1', '3': '1', '4': '4', '5': '4', '6': '6', '7': '7', '8': '8', '9': '9', '10': '8',
-						'11': '8', '12': '9', '13': '8', '14': '8', '15': '7', '16': '7', '17': '8', '18': '9', '19': '8',
-						'20': '7', '21': '9', '22': '8', '23': '8', '24': '7', '25': '7', '26': '7', '27': '27', '28': '1',
-						'29': '1', '30': '4', '31': '4', '32': '4', '33': '6', '34': '7', '35': '8', '36': '9', '37': '8',
-						'38': '8', '39': '9', '40': '8', '41': '8', '42': '7', '43': '7', '44': '8', '45': '9', '46': '8',
-						'47': '7', '48': '9', '49': '8', '50': '8', '51': '8', '52': '7', '53': '7', '54': '27', '57': '7',
-						'58': '7', '59': '7', '60': '7', '61': '6', '62': '6', '63': '9', '64': '9', '65': '9', '66': '9',
-						'67': '27', '68': '27', '69': '8', '70': '8', '71': '8', '72': '8', '73': '9', '74': '9', '75': '8',
-						'76': '8', '77': '8', '78': '8', '79': '8', '80': '8', '81': '7', '82': '7', '83': '8', '84': '8',
-						'85': '8', '86': '8', '87': '6', '88': '6', '89': '9', '90': '9', '91': '6', '92': '6', '93': '6',
-						'94': '6', '95': '9', '96': '9', '101': '1', '102': '1', "na": "na"
+		self.msnPvdr = {"1": "1", "2": "1", "3": "1", "4": "4", "5": "4", "6": "6", "7": "7", "8": "8", "9": "9", "10": "8",
+						"11": "8", "12": "9", "13": "8", "14": "8", "15": "7", "16": "7", "17": "8", "18": "9", "19": "8",
+						"20": "7", "21": "9", "22": "8", "23": "8", "24": "7", "25": "7", "26": "7", "27": "27", "28": "1",
+						"29": "1", "30": "4", "31": "4", "32": "4", "33": "6", "34": "7", "35": "8", "36": "9", "37": "8",
+						"38": "8", "39": "9", "40": "8", "41": "8", "42": "7", "43": "7", "44": "8", "45": "9", "46": "8",
+						"47": "7", "48": "9", "49": "8", "50": "8", "51": "8", "52": "7", "53": "7", "54": "27", "57": "7",
+						"58": "7", "59": "7", "60": "7", "61": "6", "62": "6", "63": "9", "64": "9", "65": "9", "66": "9",
+						"67": "27", "68": "27", "69": "8", "70": "8", "71": "8", "72": "8", "73": "9", "74": "9", "75": "8",
+						"76": "8", "77": "8", "78": "8", "79": "8", "80": "8", "81": "7", "82": "7", "83": "8", "84": "8",
+						"85": "8", "86": "8", "87": "6", "88": "6", "89": "9", "90": "9", "91": "6", "92": "6", "93": "6",
+						"94": "6", "95": "9", "96": "9", "101": "1", "102": "1", "na": "na"
 						}  # mapping: provider-external -> msn-internal
 		self.msnCodes = {
 						"1": ("32", "B"), "2": ("34", "B"), "3": ("30", "H"), "4": ("28", "H"), "5": ("26", "N"),
@@ -70,7 +70,7 @@ class Weatherinfo:
 						"71": ("42", "V"), "73": ("46", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("40", "Q"),
 						"81": ("47", "Q"), "82": ("45", "T"), "85": ("5", "V"), "86": ("43", "W"), "95": ("35", "P"),
 						"96": ("35", "O"), "99": ("4", "Z")
-						}  # mapping: omw -> (yahoo, meteo) (open-meteo weather uses who-codes)
+						}  # mapping: omw -> (yahoo, meteo)
 		self.msnDescs = {
 						"1": "SunnyDayV3", "2": "MostlySunnyDay", "3": "PartlyCloudyDayV3", "4": "MostlyCloudyDayV2",
 						"5": "CloudyV3", "6": "BlowingHailV2", "7": "BlowingSnowV2", "8": "LightRainV2", "9": "FogV2",
@@ -136,7 +136,7 @@ class Weatherinfo:
 	def setmode(self, newmode="msn", apikey=None):
 		self.error = None
 		newmode = newmode.lower()
-		if newmode in ("msn", "owm"):
+		if newmode in self.SOURCES:
 			if self.mode != newmode:
 				self.mode = newmode
 				if newmode == "msn":
@@ -150,6 +150,9 @@ class Weatherinfo:
 					else:
 						self.apikey = apikey
 						self.parser = self.owmparser
+				elif newmode == "omw":
+					self.apikey = apikey
+					self.parser = self.omwparser
 			return
 		else:
 			self.parser = None
@@ -161,7 +164,7 @@ class Weatherinfo:
 
 	def convert2icon(self, src, code):
 		self.error = None
-		if not code:
+		if code is None:
 			self.error = "[%s] ERROR in module 'convert2icon': input code value is 'None'" % MODULE_NAME
 			return
 		code = str(code).strip()
@@ -169,6 +172,8 @@ class Weatherinfo:
 			common = self.msnCodes
 		elif src is not None and src.lower() == "owm":
 			common = self.owmCodes
+		elif src is not None and src.lower() == "omw":
+			common = self.omwCodes
 		else:
 			self.error = "[%s] ERROR in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, self.SOURCES)
 			return
@@ -236,6 +241,31 @@ class Weatherinfo:
 					state = ", " + hit["state"] if "state" in hit else ""
 					country = ", " + hit["country"].upper() if "country" in hit else ""
 					citylist.append(("%s%s%s" % (cityname, state, country), hit["lon"], hit["lat"]))
+			except Exception as err:
+				self.error = "[%s] ERROR in module 'getCitylist': general error. %s" % (MODULE_NAME, str(err))
+				return
+
+		elif self.mode == "omw":
+			items = cityname.split(",")
+			cityname = "".join(items[:-1]).strip() if len(items) > 1 else items[0]
+			country = "".join(items[-1:]).strip().upper() if len(items) > 1 else None
+			link = "https://nominatim.openstreetmap.org/search?format=json&limit=10&city=%s" % cityname
+			jsonData = self.apiserver(link)
+			if not jsonData:
+				self.error = "[%s] ERROR in module 'getCitylist': no city '%s' found." % (MODULE_NAME, cityname)
+				return
+			count = 0
+			citylist = []
+			try:
+				for hit in jsonData:
+					count += 1
+					if count > 9:
+						break
+					items = hit["display_name"].split(", ")
+					cityname = "%s, %s" % (items[0], items[1]) if len(items) > 1 else "%s" % items[0]
+					if len(items) > 2:
+						cityname = "%s, %s" % (cityname, items[-1])
+					citylist.append(("%s" % cityname, hit["lon"], hit["lat"]))
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylist': general error. %s" % (MODULE_NAME, str(err))
 				return
@@ -518,6 +548,64 @@ class Weatherinfo:
 		else:
 			return self.getreducedinfo() if self.reduced else self.info
 
+	def omwparser(self):
+		self.error = None
+		self.info = None
+		windunit = "mph" if self.units == "imperial" else "kmh"
+		tempunit = "fahrenheit" if self.units == "imperial" else "celsius"
+		timezones = {"-06": "America/Anchorage", "-05": "America/Los_Angeles", "-04": "America/Denver", "-03": "America/Chicago", "-02": "America/New_York",
+	  				"-01": "America/Sao_Paulo", "+00": "Europe/London", "+01": "Europe/Berlin", "+02": "Europe/Moscow", "+03": "Africa/Cairo",
+		  			"+04": "Asia/Bangkok", "+05": "Africa/Singapore", "+06": "Africa/Tokyo", "+07": "Australis/Sydney", "+08": "Pacific/Auckland"}
+		currzone = timezones.get(datetime.now(timezone.utc).astimezone().isoformat()[26:29], "Europe/Berlin")
+		if self.geodata:
+			link = "https://api.open-meteo.com/v1/forecast?longitude=%s&latitude=%s&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=weathercode,temperature_2m_max,temperature_2m_min&timezone=%s&windspeed_unit=%s&temperature_unit=%s" % (float(self.geodata[1]), float(self.geodata[2]), currzone, windunit, tempunit)
+		else:
+			self.error = "[%s] ERROR in module 'omwparser': missing geodata." % MODULE_NAME
+			if self.callback:
+				self.callback(None, self.error)
+			return
+		if self.callback:
+			print("[%s] accessing OMW for weatherdata..." % MODULE_NAME)
+		jsonData = self.apiserver(link)
+		if jsonData and self.error is None:
+			if self.callback:
+				print("[%s] accessing OMW successful." % MODULE_NAME)
+			try:
+				jsonData["requested"] = dict()  # add some missing info
+				jsonData["requested"]["cityName"] = self.geodata[0]
+				jsonData["requested"]["lat"] = self.geodata[2]
+				jsonData["requested"]["lon"] = self.geodata[1]
+				jsonData["hourly"]["yahooCode"] = dict()
+				jsonData["hourly"]["meteoCode"] = dict()
+				for idx in range(len(jsonData["hourly"]["time"])):
+					iconCode = self.convert2icon("OMW", jsonData["hourly"]["weathercode"][idx])
+					if iconCode:
+						jsonData["hourly"]["yahooCode"][idx] = iconCode.get("yahooCode", "NA")
+						jsonData["hourly"]["meteoCode"][idx] = iconCode.get("meteoCode", ")")
+				jsonData["daily"]["day"] = dict()
+				jsonData["daily"]["shortDay"] = dict()
+				jsonData["daily"]["yahooCode"] = dict()
+				jsonData["daily"]["meteoCode"] = dict()
+				for idx, forecast in enumerate(jsonData["daily"]["time"]):
+					currdate = datetime.fromisoformat(forecast)
+					jsonData["daily"]["day"][idx] = currdate.strftime("%A")
+					jsonData["daily"]["shortDay"][idx] = currdate.strftime("%a")
+					iconCode = self.convert2icon("OMW", jsonData["daily"]["weathercode"][idx])
+					if iconCode:
+						jsonData["daily"]["yahooCode"][idx] = iconCode.get("yahooCode", "NA")
+						jsonData["daily"]["meteoCode"][idx] = iconCode.get("meteoCode", ")")
+			except Exception as err:
+				self.error = "[%s] ERROR in module 'omwparser': general error. %s" % (MODULE_NAME, str(err))
+				jsonData = None
+			self.info = jsonData
+		if self.callback:
+			if self.error:
+				self.callback(None, self.error)
+			else:
+				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
+		else:
+			return self.getreducedinfo() if self.reduced else self.info
+
 	def getCitybyID(self, cityID=None):
 		self.error = None
 		if self.mode != "owm":
@@ -583,7 +671,6 @@ class Weatherinfo:
 	def getreducedinfo(self):
 		self.error = None
 		reduced = dict()
-
 		if self.info:
 			if self.parser is not None and self.mode == "msn":
 				try:
@@ -710,6 +797,51 @@ class Weatherinfo:
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo': general error. %s" % (MODULE_NAME, str(err))
 					return
+
+			elif self.parser is not None and self.mode == "omw":
+				try:
+					reduced["source"] = "O-M Weather"
+					reduced["name"] = self.info["requested"]["cityName"]
+					reduced["longitude"] = str(self.info["longitude"])
+					reduced["latitude"] = str(self.info["latitude"])
+					isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[:14], "00")
+					reduced["current"] = dict()
+					for idx, current in enumerate(self.info["hourly"]["time"]):
+						if isotime in current:
+							isotime = datetime.now(timezone.utc).astimezone().isoformat()
+							reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
+							reduced["current"]["yahooCode"] = self.info["hourly"]["yahooCode"][idx]
+							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
+							reduced["current"]["temp"] = str(round(self.info["hourly"]["temperature_2m"][idx]))
+							reduced["current"]["feelsLike"] = str(round(self.info["hourly"]["apparent_temperature"][idx]))
+							reduced["current"]["humidity"] = str(round(self.info["hourly"]["relativehumidity_2m"][idx]))
+							reduced["current"]["windSpeed"] = str(round(self.info["hourly"]["windspeed_10m"][idx]))
+							windDir = self.info["hourly"]["winddirection_10m"][idx]
+							reduced["current"]["windDir"] = str(windDir)
+							reduced["current"]["windDirSign"] = self.directionsign(windDir)
+							reduced["current"]["day"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%A")
+							reduced["current"]["shortDay"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%a")
+							reduced["current"]["date"] = current[:10]
+							reduced["current"]["text"] = "N/A"
+							reduced["current"]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][0]))
+							reduced["current"]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][0]))
+							break
+					reduced["forecast"] = dict()
+					for idx in range(6):  # forecast of today and next 5 days
+						reduced["forecast"][idx] = dict()
+						reduced["forecast"][idx]["yahooCode"] = self.info["daily"]["yahooCode"][idx]
+						reduced["forecast"][idx]["meteoCode"] = self.info["daily"]["meteoCode"][idx]
+						reduced["forecast"][idx]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][idx]))
+						reduced["forecast"][idx]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][idx]))
+						date = self.info["daily"]["time"][idx]
+						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
+						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
+						reduced["forecast"][idx]["date"] = date
+						reduced["forecast"][idx]["text"] = "N/A"
+				except Exception as err:
+					self.error = "[%s] ERROR in module 'getreducedinfo': general error. %s" % (MODULE_NAME, str(err))
+					return
+
 			else:
 				self.error = "[%s] ERROR in module 'getreducedinfo': unknown source." % MODULE_NAME
 				return
@@ -718,7 +850,9 @@ class Weatherinfo:
 	def writereducedjson(self, filename):
 		self.error = None
 		reduced = self.getreducedinfo()
-		if not reduced:
+		if self.error is not None:
+			return
+		if reduced is None:
 			self.error = "[%s] ERROR in module 'writereducedjson': no data found." % MODULE_NAME
 			return
 		with open(filename, "w") as f:
@@ -727,7 +861,7 @@ class Weatherinfo:
 
 	def getinfo(self):
 		self.error = None
-		if not self.ready:
+		if self.ready is None:
 			self.error = "[%s] ERROR in module 'getinfo': Parser not ready" % MODULE_NAME
 			return
 		return self.info
@@ -809,7 +943,7 @@ def main(argv):
 	cityID = None
 	geocode = None
 	geodata = None
-	helpstring = "Weatherinfo v1.2: try 'Weatherinfo -h' for more information"
+	helpstring = "Weatherinfo v1.3: try 'Weatherinfo -h' for more information"
 	try:
 		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:g:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "geocode =", "control ="])
 	except GetoptError:
@@ -820,15 +954,15 @@ def main(argv):
 		arg = arg.lower().strip()
 		if opt == "-h":
 			print("Usage: Weatherinfo [options...] <cityname>\n"
-			"-m, --mode <data>\t\tValid modes: 'owm' or 'msn' {'msn' is default}\n"
+			"-m, --mode <data>\t\tValid modes: 'omw', 'owm' or 'msn' {'msn' is default}\n"
 			"-a, --apikey <data>\t\tAPI-key required for 'owm' only\n"
 			"-j, --json <filename>\t\tFile output formatted in JSON (all modes)\n"
 			"-r, --reduced <filename>\tFile output formatted in JSON (minimum infos only)\n"
 			"-x, --xml <filename>\t\tFile output formatted in XML (mode 'msn' only)\n"
-			"-s, --scheme <data>\t\tCountry scheme {'de-de' is default}\n"
+			"-s, --scheme <data>\t\tCountry scheme (not used by 'omw') {'de-de' is default}\n"
 			"-u, --units <data>\t\tValid units: 'imperial' or 'metric' {'metric' is default}\n"
-			"-i, --id <cityID>\t\tGet cityname by precated old owm-cityID (owm only)\n"
-			"-g, --geocode <lon/lat>\t\tGet cityname by 'longitude,latitude'\n"
+			"-i, --id <cityID>\t\tGet cityname by owm's DEPRECATED cityID ('owm' only)\n"
+			"-g, --geocode <lon/lat>\t\tGet cityname by 'longitude,latitude' ('owm' only)\n"
 			"-c, --control\t\t\tShow iconcode-plaintexts and conversion rules\n"
 			"-q, --quiet\t\t\tPerform without text output and select first found city")
 			exit()
@@ -847,7 +981,7 @@ def main(argv):
 		elif opt in ("-s", "--scheme"):
 			scheme = arg
 		elif opt in ("-m", "--mode"):
-			if arg in ["msn", "owm"]:
+			if arg in ["msn", "owm", "omw"]:
 				mode = arg
 			else:
 				print("ERROR: mode '%s' is invalid. Valid parameters: 'msn' or 'owm'" % arg)
@@ -926,7 +1060,7 @@ def main(argv):
 		if not quiet:
 			if mode == "msn":
 				print("Using city/area: %s" % info["currentLocation"]["displayName"])
-			elif mode == "owm":
+			elif mode in ["owm", "omw"]:
 				print("Using city/area: %s [lon=%s, lat=%s]" % (info["requested"]["cityName"], info["requested"]["lat"], info["requested"]["lon"]))
 		successtext = "File '%s' was successfully created."
 		if json:
