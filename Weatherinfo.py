@@ -437,7 +437,6 @@ class Weatherinfo:
 			c.set("observationpoint", self.info["currentLocation"]["locality"])
 			c.set("feelslike", self.info["currentCondition"]["feels"].replace("°", ""))
 			c.set("humidity", self.info["currentCondition"]["humidity"].replace("%", ""))
-			c.set("winddisplay", self.info["currentCondition"]["windSpeed"] + " " + self.directionsign(self.info["currentCondition"]["windDir"]))
 			c.set("winddisplay", "%s %s" % (self.info["currentCondition"]["windSpeed"], self.directionsign(self.info["currentCondition"]["windDir"])))
 			c.set("day", self.info["forecast"][0]["dayTextLocaleString"])
 			c.set("shortday", self.info["currentCondition"]["shortDay"])
@@ -657,9 +656,9 @@ class Weatherinfo:
 			try:
 				citylist = []
 				for hit in jsonData:
-					cityname = hit.get("local_names", {}).get(scheme[:2], hit.get("name", "N/A"))
-					state = ", " + hit["state"] if "state" in hit else ""
-					country = ", " + hit["country"].upper() if "country" in hit else ""
+					cityname = hit["local_names"][scheme[:2]] if "local_names" in hit and scheme[:2] in hit["local_names"] else hit["name"]
+					state = ", %s" % hit["state"] if "state" in hit else ""
+					country = ", %s" % hit["country"].upper() if "country" in hit else ""
 					citylist.append((cityname + state + country, hit.get("lon", "N/A"), hit.get("lat", "N/A")))
 				return citylist
 			except Exception as err:
