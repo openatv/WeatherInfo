@@ -215,9 +215,7 @@ class Weatherinfo:
 						if count > 9:
 							break
 						cityname = hit["name"] if "name" in hit else hit["address"]["text"]
-						state = ""
-						country = ""
-						citylist.append((cityname + state + country, 0, 0))
+						citylist.append((cityname, 0, 0))
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylist.msn': general error. %s" % (MODULE_NAME, str(err))
 
@@ -242,8 +240,8 @@ class Weatherinfo:
 					if count > 9:
 						break
 					cityname = hit["local_names"][scheme[:2]] if "local_names" in hit and scheme[:2] in hit["local_names"] else hit["name"]
-					state = ", " + hit["state"] if "state" in hit else ""
-					country = ", " + hit["country"].upper() if "country" in hit else ""
+					state = ", %s" % hit["state"] if "state" in hit else ""
+					country = ", %s" % hit["country"].upper() if "country" in hit else ""
 					citylist.append(("%s%s%s" % (cityname, state, country), hit["lon"], hit["lat"]))
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylist.owm': general error. %s" % (MODULE_NAME, str(err))
@@ -267,10 +265,10 @@ class Weatherinfo:
 					if count > 9:
 						break
 					cityname = hit["name"] if "name" in hit else ""
-					country = ", " + hit["country"].upper() if "country" in hit else ""
-					admin1 = ", " + hit["admin1"] if "admin1" in hit else ""
-					admin2 = ", " + hit["admin2"] if "admin2" in hit else ""
-					admin3 = ", " + hit["admin3"] if "admin3" in hit else ""
+					country = ", %s" % hit["country"].upper() if "country" in hit else ""
+					admin1 = ", %s" % hit["admin1"] if "admin1" in hit else ""
+					admin2 = ", %s" % hit["admin2"] if "admin2" in hit else ""
+					admin3 = ", %s" % hit["admin3"] if "admin3" in hit else ""
 					citylist.append(("%s%s%s%s%s" % (cityname, admin1, admin2, admin3, country), hit["longitude"], hit["latitude"]))
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylist.omw': general error. %s" % (MODULE_NAME, str(err))
@@ -372,7 +370,7 @@ class Weatherinfo:
 						jsonData["currentCondition"]["day"] = currdate.strftime("%A")
 						jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
 					for idx, forecast in enumerate(jsonData["forecast"][:-2]):  # last two entries are not usable
-						forecast["deepLink"] = link + "&day=%s" % (idx + 1)  # replaced by minimized link
+						forecast["deepLink"] = "%s&day=%s" % (link, idx + 1)  # replaced by minimized link
 						forecast["date"] = (currdate + timedelta(days=idx)).strftime("%Y-%m-%d")
 						if idx < len(svgdata):
 							forecast["image"]["svgsrc"] = svgdata[idx][0]
@@ -674,7 +672,7 @@ class Weatherinfo:
 					cityname = hit["local_names"][scheme[:2]] if "local_names" in hit and scheme[:2] in hit["local_names"] else hit["name"]
 					state = ", %s" % hit["state"] if "state" in hit else ""
 					country = ", %s" % hit["country"].upper() if "country" in hit else ""
-					citylist.append((cityname + state + country, hit.get("lon", "N/A"), hit.get("lat", "N/A")))
+					citylist.append(("%s%s%s" % (cityname, state, country), hit.get("lon", "N/A"), hit.get("lat", "N/A")))
 				return citylist
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylistbyCoords': general error. %s" % (MODULE_NAME, str(err))
@@ -695,6 +693,8 @@ class Weatherinfo:
 					reduced["latitude"] = self.info["currentLocation"]["latitude"]
 					reduced["current"] = dict()
 					reduced["current"]["observationTime"] = self.info["lastUpdated"]
+					reduced["current"]["sunrise"] = self.info["forecast"][0]["almanac"]["sunrise"]
+					reduced["current"]["sunset"] = self.info["forecast"][0]["almanac"]["sunset"]
 					reduced["current"]["isNight"] = self.info["currentCondition"]["isNight"]
 					reduced["current"]["yahooCode"] = current["yahooCode"]
 					reduced["current"]["meteoCode"] = current["meteoCode"]
@@ -739,6 +739,8 @@ class Weatherinfo:
 					reduced["current"] = dict()
 					isotime = datetime.now(timezone.utc).astimezone().isoformat()
 					reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
+					reduced["current"]["sunrise"] = datetime.fromtimestamp(int(self.info["city"]["sunrise"])).isoformat()
+					reduced["current"]["sunset"] = datetime.fromtimestamp(int(self.info["city"]["sunset"])).isoformat()
 					reduced["current"]["isNight"] = self.info["isNight"]
 					reduced["current"]["yahooCode"] = current["weather"][0]["yahooCode"]
 					reduced["current"]["meteoCode"] = current["weather"][0]["meteoCode"]
@@ -826,6 +828,8 @@ class Weatherinfo:
 						if isotime in current:
 							isotime = datetime.now(timezone.utc).astimezone().isoformat()
 							reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
+							reduced["current"]["sunrise"] = self.info["daily"]["sunrise"][0]
+							reduced["current"]["sunset"] = self.info["daily"]["sunset"][0]
 							reduced["current"]["isNight"] = self.info["isNight"]
 							reduced["current"]["yahooCode"] = self.info["hourly"]["yahooCode"][idx]
 							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
@@ -1022,7 +1026,7 @@ def main(argv):
 		print(helpstring)
 		exit()
 	for part in args:
-		cityname += part + " "
+		cityname += "%s " % part
 	cityname = cityname.strip()
 	if len(cityname) < 3 and not specialopt:
 		print("ERROR: Cityname too short, please use at least 3 letters!")
