@@ -418,8 +418,8 @@ class Weatherinfo:
 			w.set("weatherlocationname", self.info["currentLocation"]["displayName"])
 			w.set("url", self.info["currentCondition"]["deepLink"])
 			w.set("degreetype", self.info["currentCondition"]["degreeSetting"][1:])
-			w.set("lat", self.info["currentLocation"]["latitude"])
 			w.set("long", self.info["currentLocation"]["longitude"])
+			w.set("lat", self.info["currentLocation"]["latitude"])
 			w.set("timezone", str(int(self.info["source"]["location"]["TimezoneOffset"][: 2])))
 			w.set("alert", self.info["currentCondition"]["alertSignificance"])
 			w.set("encodedlocationname", self.info["currentLocation"]["locality"].encode("ascii", "xmlcharrefreplace").decode().replace(" ", "%20").replace("\n", ""))
@@ -520,13 +520,13 @@ class Weatherinfo:
 				if self.cityID:
 					jsonData["requested"] = dict()  # add some missing info
 					jsonData["requested"]["cityName"] = jsonData["city"]["name"]
-					jsonData["requested"]["lat"] = jsonData["city"]["coord"]["lat"]
 					jsonData["requested"]["lon"] = jsonData["city"]["coord"]["lon"]
+					jsonData["requested"]["lat"] = jsonData["city"]["coord"]["lat"]
 				else:
 					jsonData["requested"] = dict()  # add some missing info
 					jsonData["requested"]["cityName"] = self.geodata[0]
-					jsonData["requested"]["lat"] = self.geodata[2]
 					jsonData["requested"]["lon"] = self.geodata[1]
+					jsonData["requested"]["lat"] = self.geodata[2]
 				for period in jsonData["list"]:
 					timestamp = period["dt"]
 					period["day"] = datetime.fromtimestamp(timestamp).strftime("%A")
@@ -572,8 +572,8 @@ class Weatherinfo:
 			try:
 				jsonData["requested"] = dict()  # add some missing info
 				jsonData["requested"]["cityName"] = self.geodata[0]
-				jsonData["requested"]["lat"] = self.geodata[2]
 				jsonData["requested"]["lon"] = self.geodata[1]
+				jsonData["requested"]["lat"] = self.geodata[2]
 				jsonData["hourly"]["yahooCode"] = dict()
 				jsonData["hourly"]["meteoCode"] = dict()
 				for idx in range(len(jsonData["hourly"]["time"])):
@@ -983,7 +983,7 @@ def main(argv):
 			if arg in ["msn", "owm", "omw"]:
 				mode = arg
 			else:
-				print("ERROR: mode '%s' is invalid. Valid parameters: 'msn' or 'owm'" % arg)
+				print("ERROR: mode '%s' is invalid. Valid parameters: 'msn', 'omw' or 'owm'" % arg)
 				exit()
 		elif opt in ("-a", "--apikey"):
 			apikey = arg
@@ -1060,7 +1060,7 @@ def main(argv):
 			if mode == "msn":
 				print("Using city/area: %s" % info["currentLocation"]["displayName"])
 			elif mode in ["owm", "omw"]:
-				print("Using city/area: %s [lon=%s, lat=%s]" % (info["requested"]["cityName"], info["requested"]["lat"], info["requested"]["lon"]))
+				print("Using city/area: %s [lon=%s, lat=%s]" % (info["requested"]["cityName"], info["requested"]["lon"], info["requested"]["lat"]))
 		successtext = "File '%s' was successfully created."
 		if json:
 			WI.writejson(json)
