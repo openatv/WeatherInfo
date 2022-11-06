@@ -533,8 +533,8 @@ class Weatherinfo:
 					jsonData["requested"]["lat"] = self.geodata[2]
 				now = datetime.now()
 				sunrise = datetime.fromtimestamp(jsonData["city"]["sunrise"])
-				sunset = datetime.fromtimestamp(jsonData["city"]["sunrise"])
-				jsonData["isNight"] = False if now > sunrise and now < sunset else True
+				sunset = datetime.fromtimestamp(jsonData["city"]["sunset"])
+				jsonData["isNight"] = now < sunrise or now > sunset
 				for period in jsonData["list"]:
 					timestamp = period["dt"]
 					period["day"] = datetime.fromtimestamp(timestamp).strftime("%A")
@@ -586,7 +586,7 @@ class Weatherinfo:
 				now = datetime.now()
 				sunrise = datetime.fromisoformat(jsonData["daily"]["sunrise"][0])
 				sunset = datetime.fromisoformat(jsonData["daily"]["sunset"][0])
-				jsonData["isNight"] = False if now > sunrise and now < sunset else True
+				jsonData["isNight"] = now < sunrise or now > sunset
 				jsonData["hourly"]["yahooCode"] = dict()
 				jsonData["hourly"]["meteoCode"] = dict()
 				for idx in range(len(jsonData["hourly"]["time"])):
