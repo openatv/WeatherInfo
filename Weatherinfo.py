@@ -739,8 +739,8 @@ class Weatherinfo:
 					reduced["current"] = dict()
 					isotime = datetime.now(timezone.utc).astimezone().isoformat()
 					reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
-					reduced["current"]["sunrise"] = datetime.fromtimestamp(int(self.info["city"]["sunrise"])).isoformat()
-					reduced["current"]["sunset"] = datetime.fromtimestamp(int(self.info["city"]["sunset"])).isoformat()
+					reduced["current"]["sunrise"] = datetime.fromtimestamp(int(self.info["city"]["sunrise"])).astimezone().isoformat()
+					reduced["current"]["sunset"] = datetime.fromtimestamp(int(self.info["city"]["sunset"])).astimezone().isoformat()
 					reduced["current"]["isNight"] = self.info["isNight"]
 					reduced["current"]["yahooCode"] = current["weather"][0]["yahooCode"]
 					reduced["current"]["meteoCode"] = current["weather"][0]["meteoCode"]
@@ -828,8 +828,8 @@ class Weatherinfo:
 						if isotime in current:
 							isotime = datetime.now(timezone.utc).astimezone().isoformat()
 							reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
-							reduced["current"]["sunrise"] = self.info["daily"]["sunrise"][0]
-							reduced["current"]["sunset"] = self.info["daily"]["sunset"][0]
+							reduced["current"]["sunrise"] = datetime.fromisoformat(self.info["daily"]["sunrise"][0]).astimezone().isoformat()
+							reduced["current"]["sunset"] = datetime.fromisoformat(self.info["daily"]["sunset"][0]).astimezone().isoformat()
 							reduced["current"]["isNight"] = self.info["isNight"]
 							reduced["current"]["yahooCode"] = self.info["hourly"]["yahooCode"][idx]
 							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
