@@ -1,0 +1,56 @@
+MODIFIED YAHOO WEATHERICON-CODES
+--------------------------------
+CODE  DESCRIPTION_EN          BESCHREIBUNG_DE
+0     tornado                 Tornado
+1     tropical storm          Sturm mit schwerem Regen
+2     hurricane               Wirbelsturm
+3     severe thunderstorms    schwere Gewitterstürme
+4     thunderstorms           Gewitterstürme
+5     mixed rain and snow     gemischter Regen und Schnee
+6     mixed rain and sleet    gemischter Regen und Schneeregen
+7     mixed snow and sleet    Schnee-Graupel-Gemisch
+8     freezing drizzle        gefrierender Nieselregen
+9     drizzle                 Nieselregen
+10    freezing rain           Gefrierender Regen
+11    showers                 Regenschauer (schwächer)
+12    showers                 Regenschauer (stärker)
+13    snow flurries           Schneegestöber
+14    light snow showers      leichte Schneeschauer
+15    blowing snow            Schneeverwehungen
+16    snow                    Schnee
+17    hail                    Hagel
+18    sleet                   Graupel
+19    dust                    Staub
+20    foggy                   neblig
+21    haze                    Dunst
+22    smoky                   rauchig
+23    blustery                stürmisch
+24    windy                   windig
+25    cold                    kalt
+26    cloudy                  wolkig
+27    mostly cloudy (night)   meist bewölkt (Nacht)
+28    mostly cloudy (day)     meist bewölkt (Tag)
+29    partly cloudy (night)   teilweise bewölkt (Nacht)
+30    partly cloudy (day)     teilweise bewölkt (Tag)
+31    clear (night)           klar (Nacht)
+32    sunny (day)             sonnig (Tag)
+33    fair (night)            heiter (Nacht)
+34    fair (day)              heiter (Tag)
+35    mixed rain and hail     gemischter Regen und Hagel
+36    hot                     heiß
+37    isolated thunderstorms  einzelne Gewitter
+38    scattered thunderstorms vereinzelte Gewitter
+39    capricious weather      launisches Wetter (Aprilwetter)
+40    scattered showers       vereinzelte Schauer
+41    heavy snow              starker Schneefall
+42    scattered snow showers  vereinzelte Schneeschauer
+43    heavy snow              starker Schneefall
+44    partly cloudy           teilweise bewölkt
+45    rain showers (night)    Regenschauer (Nacht)
+46    snow showers (night)    Schneeschauer (Nacht)
+47    thundershowers (night)  Gewitterschauer (Nacht)
+NA    not available           nicht verfügbar
+
+Sources/Quellen:
+https://github.com/opendreambox/enigma2-plugins/commit/b230292f56b95a8909a778ec0c3a477f10ccb7f7
+www.igorkromin.net/index.php/2015/09/11/yahoo-weather-condition-code-to-weather-icons-font-mapping/
