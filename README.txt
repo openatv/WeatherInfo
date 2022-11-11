@@ -40,17 +40,15 @@ msnxmlData = WI.writemsnxml()               # get XML-string & write as file
 ---------------------------------------------------------------------------------------------------------
 usage for OMW only:
 WI = WeatherInfo(mode="omw")                           # initialization for "omw" (no API-key required)
-geolist = WI.getCitylistbyGeocode(geocode, scheme)     # get search results (max. 10) from geocode
+WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 ---------------------------------------------------------------------------------------------------------
 usage for OWM only:
 WI = WeatherInfo(mode="owm", apikey="my_apikey")       # initialization for "owm" (API-key required)
-geolist = WI.getCitylistbyGeocode(geocode, scheme)     # get search results (max. 5) from geocode
 geodata = WI.getCitybyID(2950159)                      # get geodata from owm's DEPRECATED cityID
 WI.start(geodata=None, cityID=cityID, units, scheme, reduced=True, callback=MyCallback)     # by cityID
 ---------------------------------------------------------------------------------------------------------
 common usage for all:
 geolist = WI.getCitylist(cityname, scheme)             # get search results (max. 10) from cityname
-WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 WI.setmode(newmode, apikey)         # change mode if desired (is already part of the initialization)
 WI.stop()                           # remove callback and let thread run out
 DICT = WI.getinfo()                 # alternatively: DICT = WI.info

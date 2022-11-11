@@ -29,27 +29,25 @@ DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be 
 class Weatherinfo:
 	def __init__(self, newmode="msn", apikey=None):
 
-		self.msnPvdr = {"1": "1", "2": "1", "3": "1", "4": "4", "5": "4", "6": "6", "7": "7", "8": "8", "9": "9", "10": "8",
-						"11": "8", "12": "9", "13": "8", "14": "8", "15": "7", "16": "7", "17": "8", "18": "9", "19": "8",
-						"20": "7", "21": "9", "22": "8", "23": "8", "24": "7", "25": "7", "26": "7", "27": "27", "28": "1",
-						"29": "1", "30": "4", "31": "4", "32": "4", "33": "6", "34": "7", "35": "8", "36": "9", "37": "8",
-						"38": "8", "39": "9", "40": "8", "41": "8", "42": "7", "43": "7", "44": "8", "45": "9", "46": "8",
-						"47": "7", "48": "9", "49": "8", "50": "8", "51": "8", "52": "7", "53": "7", "54": "27", "57": "7",
-						"58": "7", "59": "7", "60": "7", "61": "6", "62": "6", "63": "9", "64": "9", "65": "9", "66": "9",
-						"67": "27", "68": "27", "69": "8", "70": "8", "71": "8", "72": "8", "73": "9", "74": "9", "75": "8",
-						"76": "8", "77": "8", "78": "8", "79": "8", "80": "8", "81": "7", "82": "7", "83": "8", "84": "8",
-						"85": "8", "86": "8", "87": "6", "88": "6", "89": "9", "90": "9", "91": "6", "92": "6", "93": "6",
-						"94": "6", "95": "9", "96": "9", "101": "1", "102": "1", "na": "na"
-						}  # mapping: provider-external -> msn-internal
-		self.msnCodes = {
-						"1": ("32", "B"), "2": ("34", "B"), "3": ("30", "H"), "4": ("28", "H"), "5": ("26", "N"),
-						"6": ("15", "X"), "7": ("15", "U"), "8": ("9", "Q"), "9": ("20", "M"), "10": ("10", "X"),
-						"12": ("22", "J"), "14": ("11", "Q"), "15": ("41", "V"), "16": ("17", "X"), "17": ("9", "Q"),
-						"19": ("9", "Q"), "20": ("14", "U"), "23": ("12", "R"), "26": ("46", "U"), "27": ("4", "P"),
-						"28": ("31", "C"), "29": ("33", "C"), "30": ("29", "I"), "31": ("27", "I"), "39": ("22", "K"),
-						"43": ("17", "X"), "44": ("9", "Q"), "50": ("12", "R"), "77": ("5", "W"), "78": ("5", "W"),
-						"82": ("46", "U"), "91": ("24", "S"), "na": ("NA", ")")
-						}  # mapping: msn-internal -> (yahoo, meteo)
+		self.msnCodes = {"SunnyDayV3": ("32", "B"), "MostlySunnyDay": ("34", "B"), "PartlyCloudyDayV3": ("30", "H"),
+						"MostlyCloudyDayV2": ("28", "H"), "CloudyV3": ("26", "Y"), "BlowingHailV2": ("17", "X"),
+						"BlowingSnowV2": ("13", "W"), "LightRainV2": ("12", "Q"), "FogV2": ("20", "E"),
+						"FreezingRainV2": ("10", "X"), "HazySmokeV2": ("21", "J"), "ModerateRainV2": ("12", "Q"),
+						"HeavySnowV2": ("15", "W"), "HailDayV2": ("17", "X"), "LightRainV3": ("9", "Q"),
+						"LightRainShowerDay": ("11", "Q"), "LightSnowV2": ("14", "V"), "RainShowersDayV2": ("39", "R"),
+						"RainSnowV2": ("5", "W"), "SnowShowersDayV2": ("16", "W"), "ThunderstormsV2": ("4", "0"),
+						"ClearNightV3": ("31", "C"), "MostlyClearNight": ("33", "C"), "PartlyCloudyNightV2": ("29", "I"),
+						"MostlyCloudyNightV2": ("27", "I"), "HazeSmokeNightV2_106": ("21", "K"), "HailNightV2": ("17", "X"),
+						"LightRainShowerNight": ("45", "Q"), "RainShowersNightV2": ("45", "R"),
+						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "na": ("NA", ")")
+						}  # mapping: msn -> (yahoo, meteo)
+		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
+						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
+						"61": ("11", "Q"), "63": ("12", "R"), "65": ("4", "T"), "66": ("6", "R"), "67": ("7", "W"),
+						"71": ("42", "V"), "73": ("46", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("40", "Q"),
+						"81": ("47", "Q"), "82": ("45", "T"), "85": ("5", "V"), "86": ("43", "W"), "95": ("35", "P"),
+						"96": ("35", "O"), "99": ("4", "Z")
+						}  # mapping: omw -> (yahoo, meteo)
 		self.owmCodes = {
 						"200": ("4", "O"), "201": ("4", "O"), "202": ("4", "P"), "210": ("39", "O"), "211": ("4", "O"),
 						"212": ("3", "P"), "221": ("38", "O"), "230": ("4", "O"), "231": ("4", "O"), "232": ("4", "O"),
@@ -64,24 +62,14 @@ class Weatherinfo:
 						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N"),
 						"na": ("NA", ")")
 						}  # mapping: owm -> (yahoo, meteo)
-		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
-						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
-						"61": ("11", "Q"), "63": ("12", "R"), "65": ("4", "T"), "66": ("6", "R"), "67": ("7", "W"),
-						"71": ("42", "V"), "73": ("46", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("40", "Q"),
-						"81": ("47", "Q"), "82": ("45", "T"), "85": ("5", "V"), "86": ("43", "W"), "95": ("35", "P"),
-						"96": ("35", "O"), "99": ("4", "Z")
-						}  # mapping: omw -> (yahoo, meteo)
-		self.msnDescs = {
-						"1": "SunnyDayV3", "2": "MostlySunnyDay", "3": "PartlyCloudyDayV3", "4": "MostlyCloudyDayV2",
-						"5": "CloudyV3", "6": "BlowingHailV2", "7": "BlowingSnowV2", "8": "LightRainV2", "9": "FogV2",
-						"10": "FreezingRainV2", "12": "HazySmokeV2", "14": "ModerateRainV2", "15": "HeavySnowV2",
-						"16": "HailDayV2", "19": "LightRainV3", "17": "LightRainShowerDay", "20": "LightSnowV2",
-						"22": "ModerateRainV2", "23": "RainShowersDayV2", "24": "RainSnowV2", "26": "SnowShowersDayV2",
-						"27": "ThunderstormsV2", "28": "ClearNightV3", "29": "MostlyClearNight", "30": "PartlyCloudyNightV2",
-						"31": "MostlyCloudyNightV2", "32": "ClouddyHazeSmokeNightV2_106", "39": "HazeSmokeNightV2_106",
-						"43": "HailNightV2", "44": "LightRainShowerNight", "50": "RainShowersNightV2", "67": "ThunderstormsV2",
-						"77": "RainSnowV2", "78": "RainSnowShowersNightV2", "82": "SnowShowersNightV2", "91": "WindyV2", "na": "NA"
-			   			}
+		self.omwDescs = {
+						"0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
+						"53": "moderate drizzle", "55": "dense intensity drizzle", "56": "light freezing drizzle", "57": "dense intensity freezing drizzle",
+						"61": "slight rain", "63": "moderate rain", "65": "heavy intensity rain", "66": "light freezing rain", "67": "heavy intensity freezing rain",
+						"71": "slight snow fall", "73": "moderate snow fall", "75": "heavy intensity snow fall", "77": "snow grains", "80": "slight rain showers",
+						"81": "moderate rain showers", "82": "violent rain showers", "85": "slight snow showers", "86": "heavy snow showers",
+						"95": "slight or moderate thunderstorm", "96": "thunderstorm with slight hail", "99": "thunderstorm with heavy hail"
+						}  # cleartext description of omw-weathercodes
 		self.owmDescs = {
 						"200": "thunderstorm with light rain", "201": "thunderstorm with rain", "202": "thunderstorm with heavy rain",
 						"210": "light thunderstorm", "211": "thunderstorm", "212": "heavy thunderstorm", "221": "ragged thunderstorm",
@@ -95,15 +83,7 @@ class Weatherinfo:
 						"622": "Heavy shower snow", "701": "mist", "711": "Smoke", "721": "Haze", "731": "sand/ dust whirls", "741": "fog", "751": "sand",
 						"761": "dust", "762": "volcanic ash", "771": "squalls", "781": "tornado", "800": "clear sky", "801": "few clouds: 11-25%",
 						"802": "scattered clouds: 25-50%", "803": "broken clouds: 51-84%", "804": "overcast clouds: 85-100%", "na": "not available"
-						}
-		self.omwDescs = {
-						"0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
-						"53": "moderate drizzle", "55": "dense intensity drizzle", "56": "light freezing drizzle", "57": "dense intensity freezing drizzle",
-						"61": "slight rain", "63": "moderate rain", "65": "heavy intensity rain", "66": "light freezing rain", "67": "heavy intensity freezing rain",
-						"71": "slight snow fall", "73": "moderate snow fall", "75": "heavy intensity snow fall", "77": "snow grains", "80": "slight rain showers",
-						"81": "moderate rain showers", "82": "violent rain showers", "85": "slight snow showers", "86": "heavy snow showers",
-						"95": "slight or moderate thunderstorm", "96": "thunderstorm with slight hail", "99": "thunderstorm with heavy hail"
-						}
+						}  # cleartext description of owm-weathercodes
 		self.yahooDescs = {
 						"0": "tornado", "1": "tropical storm", "2": "hurricane", "3": "severe thunderstorms", "4": "thunderstorms", "5": "mixed rain and snow",
 						"6": "mixed rain and sleet", "7": "mixed snow and sleet", "8": "freezing drizzle", "9": "drizzle", "10": "freezing rain",
@@ -111,10 +91,10 @@ class Weatherinfo:
 						"17": "hail", "18": "sleet", "19": "dust", "20": "foggy", "21": "haze", "22": "smoky", "23": "blustery", "24": "windy", "25": "cold",
 						"26": "cloudy", "27": "mostly cloudy (night)", "28": "mostly cloudy (day)", "29": "partly cloudy (night)", "30": "partly cloudy (day)",
 						"31": "clear (night)", "32": "sunny (day)", "33": "fair (night)", "34": "fair (day)", "35": "mixed rain and hail", "36": "hot",
-						"37": "isolated thunderstorms", "38": "scattered thunderstorms", "39": "scattered thunderstorms", "40": "scattered showers",
-						"41": "heavy snow", "42": "scattered snow showers", "43": "heavy snow", "44": "partly cloudy", "45": "thundershowers",
-						"46": "snow showers", "47": "isolated thundershowers", "3200": "not available", "NA": "not available"
-						}
+						"37": "isolated thunderstorms", "38": "scattered thunderstorms", "39": "capricious weather", "40": "scattered showers",
+						"41": "heavy snow", "42": "scattered snow showers", "43": "heavy snow", "44": "partly cloudy", "45": "rain showers (night)",
+						"46": "snow showers (night)", "47": "thundershowers (night)", "NA": "not available"
+						}  # cleartext description of modified yahoo-iconcodes
 		self.meteoDescs = {
 						"!": "windy_rain_inv", "\"": "snow_inv", "#": "snow_heavy_inv", "$": "hail_inv", "%": "clouds_inv", "&": "clouds_flash_inv", "'": "temperature",
 						"(": "compass", ")": "na", "*": "celcius", "+": "fahrenheit", "0": "clouds_flash_alt", "1": "sun_inv", "2": "moon_inv", "3": "cloud_sun_inv",
@@ -122,7 +102,7 @@ class Weatherinfo:
 						"B": "sun", "C": "moon", "D": "eclipse", "E": "mist", "F": "wind", "G": "snowflake", "H": "cloud_sun", "I": "cloud_moon", "J": "fog_sun",
 						"K": "fog_moon", "L": "fog_cloud", "M": "fog", "N": "cloud", "O": "cloud_flash", "P": "cloud_flash_alt", "Q": "drizzle", "R": "rain",
 						"S": "windy", "T": "windy_rain", "U": "snow", "V": "snow_alt", "W": "snow_heavy", "X": "hail", "Y": "clouds", "Z": "clouds_flash"
-						}
+						}  # cleartext description of modified meteo-iconcodes
 		self.error = None
 		self.info = None
 		self.mode = None
@@ -164,18 +144,18 @@ class Weatherinfo:
 
 	def convert2icon(self, src, code):
 		self.error = None
+		src = src.lower()
 		if code is None:
 			self.error = "[%s] ERROR in module 'convert2icon': input code value is 'None'" % MODULE_NAME
+			print(self.error)
 			return
 		code = str(code).strip()
-		if src is not None and src.lower() == "msn":
-			common = self.msnCodes
-		elif src is not None and src.lower() == "owm":
-			common = self.owmCodes
-		elif src is not None and src.lower() == "omw":
-			common = self.omwCodes
+		selection = {"msn": self.msnCodes, "owm": self.owmCodes, "omw": self.omwCodes}
+		if src is not None and src in selection:
+			common = selection[src]
 		else:
-			self.error = "[%s] ERROR in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
+			self.error = "[%s] WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
+			print(self.error)
 			return
 		result = dict()
 		if code in common:
@@ -184,7 +164,8 @@ class Weatherinfo:
 		else:
 			result["yahooCode"] = "NA"
 			result["meteoCode"] = "NA"
-			self.error = "[%s] ERROR in module 'convert2icon': key '%s' not found in converting dicts." % (MODULE_NAME, code)
+			self.error = "[%s] WARNING in module 'convert2icon': key '%s' not found in converting dicts." % (MODULE_NAME, code)
+			print(self.error)
 			return
 		return result
 
@@ -341,10 +322,11 @@ class Weatherinfo:
 			startpos = output.find('</style>')
 			endpos = output.find('</script></div>')
 			bereich = output[startpos:endpos]
-			todayData = search('<div class="iconTempPartContainer-E1_1"><img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
-			svgsrc = todayData.group(1) if todayData else "N/A"
-			svgdesc = todayData.group(2) if todayData else "N/A"
 			svgdata = findall('<img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
+			todayData = search('class="summaryLineGroupCompact-E1_1">(.*?)" title="(.*?)<a data-t=', bereich)
+			svgsrc = "N/A" if todayData is None else search('src="(.*?)"/><a data-t=', todayData.group(0)).group(1)
+			svgname = "na" if todayData is None else svgsrc[svgsrc.rfind("/") + 1:svgsrc.rfind(".")]
+			svgdesc = "N/A" if todayData is None else search('title="(.*?)" src=', todayData.group(1))
 			# Create DICT "jsonData" from JSON-string and add some useful infos
 			start = '<script id="redux-data" type="application/json">'
 			startpos = output.find(start)
@@ -362,23 +344,27 @@ class Weatherinfo:
 					jsonData["currentCondition"]["deepLink"] = link  # replace by minimized link
 					jsonData["currentCondition"]["date"] = currdate.strftime("%Y-%m-%d")  # add some missing info
 					jsonData["currentCondition"]["image"]["svgsrc"] = svgsrc
+					jsonData["currentCondition"]["image"]["svgname"] = svgname
 					jsonData["currentCondition"]["image"]["svgdesc"] = svgdesc
-					iconCode = self.convert2icon("MSN", self.msnPvdr[jsonData["currentCondition"]["pvdrIcon"]])
+					iconCode = self.convert2icon("MSN", svgname)
 					if iconCode:
 						jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA")
 						jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")")
 						jsonData["currentCondition"]["day"] = currdate.strftime("%A")
 						jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
-					for idx, forecast in enumerate(jsonData["forecast"][:-2]):  # last two entries are not usable
+					for idx, forecast in enumerate(jsonData["forecast"][: -2]):  # last two entries are not usable
 						forecast["deepLink"] = "%s&day=%s" % (link, idx + 1)  # replaced by minimized link
 						forecast["date"] = (currdate + timedelta(days=idx)).strftime("%Y-%m-%d")
 						if idx < len(svgdata):
-							forecast["image"]["svgsrc"] = svgdata[idx][0]
+							svgsrc = svgdata[idx][0]
+							svgname = svgsrc[svgsrc.rfind("/") + 1:svgsrc.rfind(".")]
+							forecast["image"]["svgsrc"] = svgsrc
+							forecast["image"]["svgname"] = svgname
 							forecast["image"]["svgdesc"] = svgdata[idx][1]
 						else:
 							forecast["image"]["svgsrc"] = "N/A"
 							forecast["image"]["svgdesc"] = "N/A"
-						iconCodes = self.convert2icon("MSN", self.msnPvdr[forecast["pvdrIcon"]])
+						iconCodes = self.convert2icon("MSN", svgname)
 						if iconCodes:
 							forecast["yahooCode"] = iconCodes.get("yahooCode", "NA")
 							forecast["meteoCode"] = iconCodes.get("meteoCode", ")")
@@ -437,7 +423,7 @@ class Weatherinfo:
 			c.set("svgdesc", self.info["currentCondition"]["image"]["svgdesc"])
 			c.set("yahoocode", self.info["currentCondition"]["yahooCode"])
 			c.set("meteocode", self.info["currentCondition"]["meteoCode"])
-			c.set("observationtime", self.info["lastUpdated"][11:19])
+			c.set("observationtime", self.info["lastUpdated"][11: 19])
 			c.set("observationpoint", self.info["currentLocation"]["locality"])
 			c.set("feelslike", self.info["currentCondition"]["feels"].replace("°", ""))
 			c.set("humidity", self.info["currentCondition"]["humidity"].replace("%", ""))
@@ -446,7 +432,7 @@ class Weatherinfo:
 			c.set("shortday", self.info["currentCondition"]["shortDay"])
 			c.set("windspeed", self.info["currentCondition"]["windSpeed"])
 			w.append(c)
-			for forecast in self.info["forecast"][:-2]:  # last two entries are not usable
+			for forecast in self.info["forecast"][: -2]:  # last two entries are not usable
 				f = Element("forecast")
 				f.set("low", str(forecast["lowTemp"]))
 				f.set("high", str(forecast["highTemp"]))
@@ -506,9 +492,9 @@ class Weatherinfo:
 				self.callback(None, self.error)
 			return
 		if self.cityID:
-			link = "http://api.openweathermap.org/data/2.5/forecast?id=%s&units=%s&lang=%s&appid=%s" % (self.cityID, self.units, self.scheme[:2], self.apikey)
+			link = "http://api.openweathermap.org/data/2.5/forecast?id=%s&units=%s&lang=%s&appid=%s" % (self.cityID, self.units, self.scheme[: 2], self.apikey)
 		elif self.geodata:
-			link = "https://api.openweathermap.org/data/2.5/forecast?&lon=%s&lat=%s&units=%s&lang=%s&appid=%s" % (self.geodata[1], self.geodata[2], self.units, self.scheme[:2], self.apikey)
+			link = "https://api.openweathermap.org/data/2.5/forecast?&lon=%s&lat=%s&units=%s&lang=%s&appid=%s" % (self.geodata[1], self.geodata[2], self.units, self.scheme[: 2], self.apikey)
 		else:
 			self.error = "[%s] ERROR in module 'owmparser': missing geodata or cityID." % MODULE_NAME
 			if self.callback:
@@ -889,54 +875,63 @@ class Weatherinfo:
 
 	def showDescription(self, src):
 		self.error = None
-		if src is not None and src.lower() == "msn":
-			descs = self.msnDescs
-		elif src is not None and src.lower() == "owm":
-			descs = self.owmDescs
-		elif src is not None and src.lower() == "omw":
-			descs = self.omwDescs
-		elif src is not None and src.lower() == "yahoo":
-			descs = self.yahooDescs
-		elif src is not None and src.lower() == "meteo":
-			descs = self.meteoDescs
+		src = src.lower()
+		selection = {"msn": None, "owm": self.owmDescs, "omw": self.omwDescs, "yahoo": self.yahooDescs, "meteo": self.meteoDescs}
+		if src is not None and src in selection:
+			descs = selection[src]
 		else:
 			self.error = "[%s] ERROR in module 'showDescription': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
 			return self.error
-		print("+%s+" % ("-" * 38))
-		print("| {0:<5}{1:<31} |".format("CODE", "DESCRIPTION_%s (COMPLETE)" % src.upper()))
-		print("+%s+" % ("-" * 38))
-		for desc in descs:
-			print("| {0:<5}{1:<31} |".format(desc, descs[desc]))
-		print("+%s+\n" % ("-" * 38))
+		print("+%s+" % ("-" * 39))
+		print("| {0:<5}{1:<32} |".format("CODE", "DESCRIPTION_%s (COMPLETE)" % src.upper()))
+		print("+%s+" % ("-" * 39))
+		if src == "msn":
+			for desc in self.msnCodes:
+				print("| {0:<5}{1:<32} |".format("none", desc))
+		else:
+			for desc in descs:
+				print("| {0:<5}{1:<32} |".format(desc, descs[desc]))
+		print("+%s+\n" % ("-" * 39))
 		return
 
 	def showConvertrules(self, src, dest):
 		self.error = None
+		src = src.lower()
+		dest = dest.lower()
 		if not src:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
 			return self.error
-		if dest is not None and dest.lower() == "meteo":
-			ddescs = self.meteoDescs
-		elif dest is not None and dest.lower() == "yahoo":
-			ddescs = self.yahooDescs
+		selection = {"meteo": self.meteoDescs, "yahoo": self.yahooDescs}
+		if dest in selection:
+			ddescs = selection[dest]
+			destidx = DESTINATIONS.index(dest)
 		else:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert destination '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, DESTINATIONS)
 			return self.error
-		destidx = DESTINATIONS.index(dest)
 		print("+%s+%s+" % ("-" * 40, "-" * 32))
-		if src.lower() == "msn":
-			print("| {0:<3} -> {1:<4}{2:<27} | {3:<5}{4:<25} |".format("PVD", "MSN", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
+		selection = {"msn": self.msnCodes, "omw": self.omwCodes, "owm": self.owmCodes}
+		if src in selection:
+			sCodes = selection[src]
+			selection = {"msn": None, "omw": self.omwDescs, "owm": self.owmDescs}
+			sDescs = selection[src]
+			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
 			print("+%s+%s+" % ("-" * 40, "-" * 32))
-			for scode in self.msnPvdr:
-				dcode = self.msnCodes[self.msnPvdr[scode]][destidx]
-				print("| {0:<3} -> {1:<4}{2:<27} | {3:<5}{4:<25} |".format(scode, self.msnPvdr[scode], self.msnDescs[self.msnPvdr[scode]], dcode, ddescs[dcode]))
-		elif src.lower() == "owm":
+			if src == "msn":
+				for scode in sCodes:
+					dcode = sCodes[scode][destidx]
+					print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("none", scode, dcode, ddescs[dcode]))
+			else:
+				for scode in sCodes:
+					dcode = sCodes[scode][destidx]
+					print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, sDescs[scode], dcode, ddescs[dcode]))
+			print("+%s+%s+\n" % ("-" * 40, "-" * 32))
+
+		elif src == "owm":
 			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
 			print("+%s+%s+" % ("-" * 40, "-" * 32))
 			for scode in self.owmCodes:
 				dcode = self.owmCodes[scode][destidx]
-				print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, self.owmDescs[scode], dcode, ddescs[dcode]))
-		elif src.lower() == "omw":
+		elif src == "om":
 			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
 			print("+%s+%s+" % ("-" * 40, "-" * 32))
 			for scode in self.omwCodes:
@@ -945,7 +940,6 @@ class Weatherinfo:
 		else:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
 			return self.error
-		print("+%s+%s+\n" % ("-" * 40, "-" * 32))
 		return
 
 
@@ -962,11 +956,10 @@ def main(argv):
 	specialopt = None
 	control = False
 	cityID = None
-	geocode = None
 	geodata = None
-	helpstring = "Weatherinfo v1.3: try 'Weatherinfo -h' for more information"
+	helpstring = "Weatherinfo v1.4: try 'Weatherinfo -h' for more information"
 	try:
-		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:g:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "geocode =", "control ="])
+		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "control ="])
 	except GetoptError:
 		print(helpstring)
 		exit(2)
@@ -983,7 +976,6 @@ def main(argv):
 			"-s, --scheme <data>\t\tCountry scheme (not used by 'omw') {'de-de' is default}\n"
 			"-u, --units <data>\t\tValid units: 'imperial' or 'metric' {'metric' is default}\n"
 			"-i, --id <cityID>\t\tGet cityname by owm's DEPRECATED cityID ('owm' only)\n"
-			"-g, --geocode <lon/lat>\t\tGet cityname by 'longitude,latitude' ('owm' only)\n"
 			"-c, --control\t\t\tShow iconcode-plaintexts and conversion rules\n"
 			"-q, --quiet\t\t\tPerform without text output and select first found city")
 			exit()
@@ -1011,10 +1003,6 @@ def main(argv):
 			apikey = arg
 		elif opt in ("-i", "--id"):
 			cityID = arg
-			specialopt = True
-		elif opt in ("-g", "--geocode"):
-			geocode = arg.split(",")
-			geodata = ("", geocode[0], geocode[1])
 			specialopt = True
 		elif opt in ("-c", "control"):
 			control = True
@@ -1044,7 +1032,7 @@ def main(argv):
 	if WI.error:
 		print(WI.error.replace("[__main__]", "").strip())
 		exit()
-	if cityname and not geocode:
+	if cityname:
 		citylist = WI.getCitylist(cityname, scheme)
 		if WI.error:
 			print(WI.error.replace("[__main__]", "").strip())
