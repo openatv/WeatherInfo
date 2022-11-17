@@ -713,6 +713,53 @@ class Weatherinfo:
 					self.error = "[%s] ERROR in module 'getreducedinfo.msn': general error. %s" % (MODULE_NAME, str(err))
 					return
 
+			elif self.parser is not None and self.mode == "omw":
+				try:
+					reduced["source"] = "O-M Weather"
+					reduced["name"] = self.info["requested"]["cityName"]
+					reduced["longitude"] = str(self.info["longitude"])
+					reduced["latitude"] = str(self.info["latitude"])
+					isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[:14], "00")
+					reduced["current"] = dict()
+					for idx, current in enumerate(self.info["hourly"]["time"]):
+						if isotime in current:
+							isotime = datetime.now(timezone.utc).astimezone().isoformat()
+							reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
+							reduced["current"]["sunrise"] = datetime.fromisoformat(self.info["daily"]["sunrise"][0]).astimezone().isoformat()
+							reduced["current"]["sunset"] = datetime.fromisoformat(self.info["daily"]["sunset"][0]).astimezone().isoformat()
+							reduced["current"]["isNight"] = self.info["isNight"]
+							reduced["current"]["yahooCode"] = self.info["hourly"]["yahooCode"][idx]
+							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
+							reduced["current"]["temp"] = str(round(self.info["hourly"]["temperature_2m"][idx]))
+							reduced["current"]["feelsLike"] = str(round(self.info["hourly"]["apparent_temperature"][idx]))
+							reduced["current"]["humidity"] = str(round(self.info["hourly"]["relativehumidity_2m"][idx]))
+							reduced["current"]["windSpeed"] = str(round(self.info["hourly"]["windspeed_10m"][idx]))
+							windDir = self.info["hourly"]["winddirection_10m"][idx]
+							reduced["current"]["windDir"] = str(windDir)
+							reduced["current"]["windDirSign"] = self.directionsign(windDir)
+							reduced["current"]["day"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%A")
+							reduced["current"]["shortDay"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%a")
+							reduced["current"]["date"] = current[:10]
+							reduced["current"]["text"] = "N/A"
+							reduced["current"]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][0]))
+							reduced["current"]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][0]))
+							break
+					reduced["forecast"] = dict()
+					for idx in range(6):  # forecast of today and next 5 days
+						reduced["forecast"][idx] = dict()
+						reduced["forecast"][idx]["yahooCode"] = self.info["daily"]["yahooCode"][idx]
+						reduced["forecast"][idx]["meteoCode"] = self.info["daily"]["meteoCode"][idx]
+						reduced["forecast"][idx]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][idx]))
+						reduced["forecast"][idx]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][idx]))
+						date = self.info["daily"]["time"][idx]
+						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
+						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
+						reduced["forecast"][idx]["date"] = date
+						reduced["forecast"][idx]["text"] = "N/A"
+				except Exception as err:
+					self.error = "[%s] ERROR in module 'getreducedinfo.owm': general error. %s" % (MODULE_NAME, str(err))
+					return
+
 			elif self.parser is not None and self.mode == "owm":
 				try:
 					current = self.info["list"][0]  # collect current weather data
@@ -731,7 +778,7 @@ class Weatherinfo:
 					reduced["current"]["temp"] = str(round(current["main"]["temp"]))
 					reduced["current"]["feelsLike"] = str(round(current["main"]["feels_like"]))
 					reduced["current"]["humidity"] = str(round(current["main"]["humidity"]))
-					reduced["current"]["windSpeed"] = str(round(current["wind"]["speed"]))
+					reduced["current"]["windSpeed"] = str(round(current["wind"]["speed"] * 3.6))
 					windDir = current["wind"]["deg"]
 					reduced["current"]["windDir"] = str(windDir)
 					reduced["current"]["windDirSign"] = self.directionsign(int(windDir))
@@ -796,53 +843,6 @@ class Weatherinfo:
 						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
 					reduced["current"]["minTemp"] = reduced["forecast"][0]["minTemp"]  # missing data for today are added
 					reduced["current"]["maxTemp"] = reduced["forecast"][0]["maxTemp"]
-				except Exception as err:
-					self.error = "[%s] ERROR in module 'getreducedinfo.owm': general error. %s" % (MODULE_NAME, str(err))
-					return
-
-			elif self.parser is not None and self.mode == "omw":
-				try:
-					reduced["source"] = "O-M Weather"
-					reduced["name"] = self.info["requested"]["cityName"]
-					reduced["longitude"] = str(self.info["longitude"])
-					reduced["latitude"] = str(self.info["latitude"])
-					isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[:14], "00")
-					reduced["current"] = dict()
-					for idx, current in enumerate(self.info["hourly"]["time"]):
-						if isotime in current:
-							isotime = datetime.now(timezone.utc).astimezone().isoformat()
-							reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
-							reduced["current"]["sunrise"] = datetime.fromisoformat(self.info["daily"]["sunrise"][0]).astimezone().isoformat()
-							reduced["current"]["sunset"] = datetime.fromisoformat(self.info["daily"]["sunset"][0]).astimezone().isoformat()
-							reduced["current"]["isNight"] = self.info["isNight"]
-							reduced["current"]["yahooCode"] = self.info["hourly"]["yahooCode"][idx]
-							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
-							reduced["current"]["temp"] = str(round(self.info["hourly"]["temperature_2m"][idx]))
-							reduced["current"]["feelsLike"] = str(round(self.info["hourly"]["apparent_temperature"][idx]))
-							reduced["current"]["humidity"] = str(round(self.info["hourly"]["relativehumidity_2m"][idx]))
-							reduced["current"]["windSpeed"] = str(round(self.info["hourly"]["windspeed_10m"][idx]))
-							windDir = self.info["hourly"]["winddirection_10m"][idx]
-							reduced["current"]["windDir"] = str(windDir)
-							reduced["current"]["windDirSign"] = self.directionsign(windDir)
-							reduced["current"]["day"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%A")
-							reduced["current"]["shortDay"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%a")
-							reduced["current"]["date"] = current[:10]
-							reduced["current"]["text"] = "N/A"
-							reduced["current"]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][0]))
-							reduced["current"]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][0]))
-							break
-					reduced["forecast"] = dict()
-					for idx in range(6):  # forecast of today and next 5 days
-						reduced["forecast"][idx] = dict()
-						reduced["forecast"][idx]["yahooCode"] = self.info["daily"]["yahooCode"][idx]
-						reduced["forecast"][idx]["meteoCode"] = self.info["daily"]["meteoCode"][idx]
-						reduced["forecast"][idx]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][idx]))
-						reduced["forecast"][idx]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][idx]))
-						date = self.info["daily"]["time"][idx]
-						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
-						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
-						reduced["forecast"][idx]["date"] = date
-						reduced["forecast"][idx]["text"] = "N/A"
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo.owm': general error. %s" % (MODULE_NAME, str(err))
 					return
