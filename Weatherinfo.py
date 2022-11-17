@@ -22,7 +22,7 @@ from twisted.internet.reactor import callInThread
 from xml.etree.ElementTree import Element, tostring
 
 MODULE_NAME = __name__.split(".")[-1]
-SOURCES = ["msn", "owm", "omw"]  # supported sourcecodes (the order must not be changed)
+SOURCES = ["msn", "omw", "owm"]  # supported sourcecodes (the order must not be changed)
 DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be changed)
 
 
@@ -31,7 +31,7 @@ class Weatherinfo:
 
 		self.msnCodes = {"SunnyDayV3": ("32", "B"), "MostlySunnyDay": ("34", "B"), "PartlyCloudyDayV3": ("30", "H"),
 						"MostlyCloudyDayV2": ("28", "H"), "CloudyV3": ("26", "Y"), "BlowingHailV2": ("17", "X"),
-						"BlowingSnowV2": ("13", "W"), "LightRainV2": ("12", "Q"), "FogV2": ("20", "E"),
+						"HeavyDrizzle": ("9", "Q"), "BlowingSnowV2": ("13", "W"), "LightRainV2": ("12", "Q"), "FogV2": ("20", "E"),
 						"FreezingRainV2": ("10", "X"), "HazySmokeV2": ("21", "J"), "ModerateRainV2": ("12", "Q"),
 						"HeavySnowV2": ("15", "W"), "HailDayV2": ("17", "X"), "LightRainV3": ("9", "Q"),
 						"LightRainShowerDay": ("11", "Q"), "LightSnowV2": ("14", "V"), "RainShowersDayV2": ("39", "R"),
@@ -43,20 +43,20 @@ class Weatherinfo:
 						}  # mapping: msn -> (yahoo, meteo)
 		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
 						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
-						"61": ("11", "Q"), "63": ("12", "R"), "65": ("4", "T"), "66": ("6", "R"), "67": ("7", "W"),
-						"71": ("42", "V"), "73": ("46", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("40", "Q"),
-						"81": ("47", "Q"), "82": ("45", "T"), "85": ("5", "V"), "86": ("43", "W"), "95": ("35", "P"),
-						"96": ("35", "O"), "99": ("4", "Z")
+						"61": ("9", "Q"), "63": ("11", "R"), "65": ("12", "T"), "66": ("8", "R"), "67": ("7", "W"),
+						"71": ("42", "V"), "73": ("14", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("9", "Q"),
+						"81": ("11", "Q"), "82": ("12", "T"), "85": ("42", "V"), "86": ("43", "W"), "95": ("38", "P"),
+						"96": ("4", "O"), "99": ("4", "Z")
 						}  # mapping: omw -> (yahoo, meteo)
 		self.owmCodes = {
-						"200": ("4", "O"), "201": ("4", "O"), "202": ("4", "P"), "210": ("39", "O"), "211": ("4", "O"),
-						"212": ("3", "P"), "221": ("38", "O"), "230": ("4", "O"), "231": ("4", "O"), "232": ("4", "O"),
+						"200": ("37", "O"), "201": ("4", "O"), "202": ("3", "P"), "210": ("37", "O"), "211": ("4", "O"),
+						"212": ("3", "P"), "221": ("3", "O"), "230": ("37", "O"), "231": ("38", "O"), "232": ("38", "O"),
 						"300": ("9", "Q"), "301": ("9", "Q"), "302": ("9", "Q"), "310": ("9", "Q"), "311": ("9", "Q"),
 						"312": ("9", "R"), "313": ("11", "R"), "314": ("12", "R"), "321": ("11", "R"), "500": ("9", "Q"),
-						"501": ("11", "Q"), "502": ("12", "R"), "503": ("45", "R"), "504": ("45", "R"), "511": ("10", "W"),
-						"520": ("40", "Q"), "521": ("11", "R"), "522": ("45", "R"), "531": ("40", "Q"), "600": ("13", "U"),
-						"601": ("16", "V"), "602": ("41", "V"), "611": ("18", "X"), "612": ("10", "W"), "613": ("17", "X"),
-						"615": ("5", "W"), "616": ("5", "W"), "620": ("14", "U"), "621": ("42", "U"), "622": ("46", "V"),
+						"501": ("11", "Q"), "502": ("11", "R"), "503": ("12", "R"), "504": ("12", "R"), "511": ("10", "W"),
+						"520": ("11", "Q"), "521": ("11", "R"), "522": ("12", "R"), "531": ("40", "Q"), "600": ("42", "U"),
+						"601": ("16", "V"), "602": ("15", "V"), "611": ("18", "X"), "612": ("10", "W"), "613": ("17", "X"),
+						"615": ("6", "W"), "616": ("5", "W"), "620": ("14", "U"), "621": ("42", "U"), "622": ("13", "V"),
 						"701": ("20", "M"), "711": ("22", "J"), "721": ("21", "E"), "731": ("19", "J"), "741": ("20", "E"),
 						"751": ("19", "J"), "761": ("19", "J"), "762": ("22", "J"), "771": ("23", "F"), "781": ("0", "F"),
 						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N"),
@@ -133,7 +133,6 @@ class Weatherinfo:
 				elif newmode == "omw":
 					self.apikey = apikey
 					self.parser = self.omwparser
-			return
 		else:
 			self.parser = None
 			self.error = "[%s] ERROR in module 'setmode': unknown mode '%s'" % (MODULE_NAME, newmode)
@@ -199,7 +198,7 @@ class Weatherinfo:
 						citylist.append((cityname, 0, 0))
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylist.msn': general error. %s" % (MODULE_NAME, str(err))
-
+				return
 		elif self.mode == "owm":
 			special = {"br": "pt_br", "se": "sv, se", "es": "sp, es", "ua": "ua, uk", "cn": "zh_cn"}
 			if scheme[:2] in special:
@@ -254,7 +253,6 @@ class Weatherinfo:
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'getCitylist.omw': general error. %s" % (MODULE_NAME, str(err))
 				return
-
 		else:
 			self.error = "[%s] ERROR in module 'start': unknown mode." % MODULE_NAME
 			return
@@ -374,7 +372,7 @@ class Weatherinfo:
 				else:
 					if self.callback:
 						self.callback(None, self.error)
-						return
+					return
 			else:
 				self.error = "[%s] ERROR in module 'msnparser': expected parsing data not found." % MODULE_NAME
 		except Exception as err:
@@ -882,7 +880,7 @@ class Weatherinfo:
 		else:
 			self.error = "[%s] ERROR in module 'showDescription': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
 			return self.error
-		print("+%s+" % ("-" * 39))
+		print("\n+%s+" % ("-" * 39))
 		print("| {0:<5}{1:<32} |".format("CODE", "DESCRIPTION_%s (COMPLETE)" % src.upper()))
 		print("+%s+" % ("-" * 39))
 		if src == "msn":
@@ -891,8 +889,7 @@ class Weatherinfo:
 		else:
 			for desc in descs:
 				print("| {0:<5}{1:<32} |".format(desc, descs[desc]))
-		print("+%s+\n" % ("-" * 39))
-		return
+		print("+%s+" % ("-" * 39))
 
 	def showConvertrules(self, src, dest):
 		self.error = None
@@ -908,39 +905,28 @@ class Weatherinfo:
 		else:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert destination '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, DESTINATIONS)
 			return self.error
-		print("+%s+%s+" % ("-" * 40, "-" * 32))
+		print("\n+%s+%s+" % ("-" * 39, "-" * 32))
 		selection = {"msn": self.msnCodes, "omw": self.omwCodes, "owm": self.owmCodes}
 		if src in selection:
 			sCodes = selection[src]
-			selection = {"msn": None, "omw": self.omwDescs, "owm": self.owmDescs}
-			sDescs = selection[src]
-			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
-			print("+%s+%s+" % ("-" * 40, "-" * 32))
+			print("| {0:<5}{1:<32} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
+			print("+%s+%s+" % ("-" * 39, "-" * 32))
 			if src == "msn":
 				for scode in sCodes:
 					dcode = sCodes[scode][destidx]
-					print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("none", scode, dcode, ddescs[dcode]))
-			else:
-				for scode in sCodes:
-					dcode = sCodes[scode][destidx]
-					print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, sDescs[scode], dcode, ddescs[dcode]))
-			print("+%s+%s+\n" % ("-" * 40, "-" * 32))
-
-		elif src == "owm":
-			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
-			print("+%s+%s+" % ("-" * 40, "-" * 32))
-			for scode in self.owmCodes:
-				dcode = self.owmCodes[scode][destidx]
-		elif src == "om":
-			print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format("CODE", "DESCRIPTION_%s (CONVERTER)" % src.upper(), "CODE", "DESCRIPTION_%s" % dest.upper()))
-			print("+%s+%s+" % ("-" * 40, "-" * 32))
-			for scode in self.omwCodes:
-				dcode = self.omwCodes[scode][destidx]
-				print("| {0:<5}{1:<33} | {2:<5}{3:<25} |".format(scode, self.omwDescs[scode], dcode, ddescs[dcode]))
+					print("| {0:<5}{1:<32} | {2:<5}{3:<25} |".format("none", scode, dcode, ddescs[dcode]))
+			elif src == "omw":
+				for scode in self.omwCodes:
+					dcode = self.omwCodes[scode][destidx]
+					print("| {0:<5}{1:<32} | {2:<5}{3:<25} |".format(scode, self.omwDescs[scode], dcode, ddescs[dcode]))
+			elif src == "owm":
+				for scode in self.owmCodes:
+					dcode = self.owmCodes[scode][destidx]
+					print("| {0:<5}{1:<32} | {2:<5}{3:<25} |".format(scode, self.owmDescs[scode], dcode, ddescs[dcode]))
+			print("+%s+%s+" % ("-" * 39, "-" * 32))
 		else:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
 			return self.error
-		return
 
 
 def main(argv):
@@ -957,6 +943,8 @@ def main(argv):
 	control = False
 	cityID = None
 	geodata = None
+	info = None
+
 	helpstring = "Weatherinfo v1.4: try 'Weatherinfo -h' for more information"
 	try:
 		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "control ="])
@@ -1026,9 +1014,7 @@ def main(argv):
 				print(WI.error.replace("[__main__]", "").strip())
 		for src in SOURCES:
 			for dest in DESTINATIONS:
-				if WI.showConvertrules(src, dest):
-					print(WI.error.replace("[__main__]", "").strip())
-		exit()
+				WI.showConvertrules(src, dest)
 	if WI.error:
 		print(WI.error.replace("[__main__]", "").strip())
 		exit()
@@ -1054,13 +1040,14 @@ def main(argv):
 			else:
 				print("Choice '%s' is not allowable (only numbers 1 to %s are valid).\nPlease try again." % (choice, len(citylist)))
 				exit()
-	if geodata:
-		info = WI.start(geodata=geodata, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
-	elif cityID:
-		info = WI.start(cityID=cityID, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
-	else:
-		print("ERROR: missing cityname or geodata or cityid.")
-		exit()
+	if not specialopt:
+		if geodata:
+			info = WI.start(geodata=geodata, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
+		elif cityID:
+			info = WI.start(cityID=cityID, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
+		else:
+			print("ERROR: missing cityname or geodata or cityid.")
+			exit()
 	if WI.error:
 		print(WI.error.replace("[__main__]", "").strip())
 		exit()
