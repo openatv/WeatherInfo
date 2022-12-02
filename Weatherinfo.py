@@ -38,7 +38,7 @@ class Weatherinfo:
 						"RainSnowV2": ("5", "W"), "SnowShowersDayV2": ("16", "W"), "ThunderstormsV2": ("4", "0"),
 						"ClearNightV3": ("31", "C"), "MostlyClearNight": ("33", "C"), "PartlyCloudyNightV2": ("29", "I"),
 						"MostlyCloudyNightV2": ("27", "I"), "HazeSmokeNightV2_106": ("21", "K"), "HailNightV2": ("17", "X"),
-						"LightRainShowerNight": ("45", "Q"), "RainShowersNightV2": ("45", "R"), "N422Snow": ("14", "W")
+						"LightRainShowerNight": ("45", "Q"), "RainShowersNightV2": ("45", "R"), "N422Snow": ("14", "W"),
 						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "na": ("NA", ")")
 						}  # mapping: msn -> (yahoo, meteo)
 		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
