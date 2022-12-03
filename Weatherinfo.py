@@ -329,11 +329,11 @@ class Weatherinfo:
 			start = '<script id="redux-data" type="application/json">'
 			startpos = output.find(start)
 			endpos = output.find("</script>", startpos)
-			output = output[startpos + len(start):endpos].split("; ")
+			output = output[startpos + len(start):endpos]
 			if len(output):
 				jsonData = None
 				try:
-					output = loads(output[0])
+					output = loads(output)
 					jsonData = output["WeatherData"]["_@STATE@_"]
 				except Exception as jsonerr:
 					self.error = "[%s] ERROR in module 'msnparser': found invalid json-string. %s" % (MODULE_NAME, str(jsonerr))
