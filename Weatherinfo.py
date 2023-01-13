@@ -675,6 +675,8 @@ class Weatherinfo:
 					reduced["name"] = self.info["currentLocation"]["displayName"]
 					reduced["longitude"] = self.info["currentLocation"]["longitude"]
 					reduced["latitude"] = self.info["currentLocation"]["latitude"]
+					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
+					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
 					reduced["current"] = dict()
 					reduced["current"]["observationTime"] = self.info["lastUpdated"]
 					reduced["current"]["sunrise"] = self.info["forecast"][0]["almanac"]["sunrise"]
@@ -719,6 +721,8 @@ class Weatherinfo:
 					reduced["name"] = self.info["requested"]["cityName"]
 					reduced["longitude"] = str(self.info["longitude"])
 					reduced["latitude"] = str(self.info["latitude"])
+					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
+					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
 					isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[:14], "00")
 					reduced["current"] = dict()
 					for idx, current in enumerate(self.info["hourly"]["time"]):
@@ -767,6 +771,8 @@ class Weatherinfo:
 					reduced["name"] = self.info["requested"]["cityName"]
 					reduced["longitude"] = str(self.info["requested"]["lon"])
 					reduced["latitude"] = str(self.info["requested"]["lat"])
+					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
+					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
 					reduced["current"] = dict()
 					isotime = datetime.now(timezone.utc).astimezone().isoformat()
 					reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
