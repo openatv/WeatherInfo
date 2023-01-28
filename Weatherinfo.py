@@ -408,7 +408,7 @@ class Weatherinfo:
 			w.set("degreetype", self.info["currentCondition"]["degreeSetting"][1:])
 			w.set("long", self.info["currentLocation"]["longitude"])
 			w.set("lat", self.info["currentLocation"]["latitude"])
-			w.set("timezone", str(int(self.info["source"]["location"]["TimezoneOffset"][: 2])))
+			w.set("timezone", "%s" % int(self.info["source"]["location"]["TimezoneOffset"][: 2]))
 			w.set("alert", self.info["currentCondition"]["alertSignificance"])
 			w.set("encodedlocationname", self.info["currentLocation"]["locality"].encode("ascii", "xmlcharrefreplace").decode().replace(" ", "%20").replace("\n", ""))
 			root.append(w)
@@ -432,8 +432,8 @@ class Weatherinfo:
 			w.append(c)
 			for forecast in self.info["forecast"][: -2]:  # last two entries are not usable
 				f = Element("forecast")
-				f.set("low", str(forecast["lowTemp"]))
-				f.set("high", str(forecast["highTemp"]))
+				f.set("low", "%s" % forecast["lowTemp"])
+				f.set("high", "%s" % forecast["highTemp"])
 				f.set("skytextday", forecast["cap"])
 				f.set("date", forecast["date"])
 				f.set("svglink", forecast["image"]["svgsrc"])
@@ -480,6 +480,69 @@ class Weatherinfo:
 		else:
 			self.error = "[%s] ERROR in module 'apiserver': missing link." % MODULE_NAME
 		return
+
+	def omwparser(self):
+		self.error = None
+		self.info = None
+		windunit = "mph" if self.units == "imperial" else "kmh"
+		tempunit = "fahrenheit" if self.units == "imperial" else "celsius"
+		timezones = {"-06": "America/Anchorage", "-05": "America/Los_Angeles", "-04": "America/Denver", "-03": "America/Chicago", "-02": "America/New_York",
+	  				"-01": "America/Sao_Paulo", "+00": "Europe/London", "+01": "Europe/Berlin", "+02": "Europe/Moscow", "+03": "Africa/Cairo",
+		  			"+04": "Asia/Bangkok", "+05": "Asia/Singapore", "+06": "Asia/Tokyo", "+07": "Australia/Sydney", "+08": "Pacific/Auckland"}
+		currzone = timezones.get(datetime.now(timezone.utc).astimezone().isoformat()[26:29], "Europe/Berlin")
+
+		if self.geodata:
+			link = "https://api.open-meteo.com/v1/forecast?longitude=%s&latitude=%s&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=sunrise,sunset,weathercode,precipitation_sum,temperature_2m_max,temperature_2m_min&timezone=%s&windspeed_unit=%s&temperature_unit=%s" % (float(self.geodata[1]), float(self.geodata[2]), currzone, windunit, tempunit)
+		else:
+			self.error = "[%s] ERROR in module 'omwparser': missing geodata." % MODULE_NAME
+			if self.callback:
+				self.callback(None, self.error)
+			return
+		if self.callback:
+			print("[%s] accessing OMW for weatherdata..." % MODULE_NAME)
+		jsonData = self.apiserver(link)
+		if jsonData and self.error is None:
+			if self.callback:
+				print("[%s] accessing OMW successful." % MODULE_NAME)
+			try:
+				jsonData["requested"] = dict()  # add some missing info
+				jsonData["requested"]["cityName"] = self.geodata[0]
+				jsonData["requested"]["lon"] = self.geodata[1]
+				jsonData["requested"]["lat"] = self.geodata[2]
+				now = datetime.now()
+				sunrise = datetime.fromisoformat(jsonData["daily"]["sunrise"][0])
+				sunset = datetime.fromisoformat(jsonData["daily"]["sunset"][0])
+				jsonData["isNight"] = now < sunrise or now > sunset
+				jsonData["hourly"]["yahooCode"] = dict()
+				jsonData["hourly"]["meteoCode"] = dict()
+				for idx in range(len(jsonData["hourly"]["time"])):
+					iconCode = self.convert2icon("OMW", jsonData["hourly"]["weathercode"][idx])
+					if iconCode:
+						jsonData["hourly"]["yahooCode"][idx] = iconCode.get("yahooCode", "NA")
+						jsonData["hourly"]["meteoCode"][idx] = iconCode.get("meteoCode", ")")
+				jsonData["daily"]["day"] = dict()
+				jsonData["daily"]["shortDay"] = dict()
+				jsonData["daily"]["yahooCode"] = dict()
+				jsonData["daily"]["meteoCode"] = dict()
+				for idx, forecast in enumerate(jsonData["daily"]["time"]):
+					currdate = datetime.fromisoformat(forecast)
+					jsonData["daily"]["day"][idx] = currdate.strftime("%A")
+					jsonData["daily"]["shortDay"][idx] = currdate.strftime("%a")
+					iconCode = self.convert2icon("OMW", jsonData["daily"]["weathercode"][idx])
+					if iconCode:
+						jsonData["daily"]["yahooCode"][idx] = iconCode.get("yahooCode", "NA")
+						jsonData["daily"]["meteoCode"][idx] = iconCode.get("meteoCode", ")")
+			except Exception as err:
+				self.error = "[%s] ERROR in module 'omwparser': general error. %s" % (MODULE_NAME, str(err))
+				jsonData = None
+			self.info = jsonData
+		if self.callback:
+			if self.error:
+				self.callback(None, self.error)
+			else:
+				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
+		else:
+			return self.getreducedinfo() if self.reduced else self.info
 
 	def owmparser(self):
 		self.error = None
@@ -529,69 +592,6 @@ class Weatherinfo:
 						period["weather"][0]["meteoCode"] = iconCode.get("meteoCode", ")")
 			except Exception as err:
 				self.error = "[%s] ERROR in module 'owmparser': general error. %s" % (MODULE_NAME, str(err))
-				jsonData = None
-			self.info = jsonData
-		if self.callback:
-			if self.error:
-				self.callback(None, self.error)
-			else:
-				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
-		else:
-			return self.getreducedinfo() if self.reduced else self.info
-
-	def omwparser(self):
-		self.error = None
-		self.info = None
-		windunit = "mph" if self.units == "imperial" else "kmh"
-		tempunit = "fahrenheit" if self.units == "imperial" else "celsius"
-		timezones = {"-06": "America/Anchorage", "-05": "America/Los_Angeles", "-04": "America/Denver", "-03": "America/Chicago", "-02": "America/New_York",
-	  				"-01": "America/Sao_Paulo", "+00": "Europe/London", "+01": "Europe/Berlin", "+02": "Europe/Moscow", "+03": "Africa/Cairo",
-		  			"+04": "Asia/Bangkok", "+05": "Asia/Singapore", "+06": "Asia/Tokyo", "+07": "Australia/Sydney", "+08": "Pacific/Auckland"}
-		currzone = timezones.get(datetime.now(timezone.utc).astimezone().isoformat()[26:29], "Europe/Berlin")
-
-		if self.geodata:
-			link = "https://api.open-meteo.com/v1/forecast?longitude=%s&latitude=%s&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m&daily=sunrise,sunset,weathercode,temperature_2m_max,temperature_2m_min&timezone=%s&windspeed_unit=%s&temperature_unit=%s" % (float(self.geodata[1]), float(self.geodata[2]), currzone, windunit, tempunit)
-		else:
-			self.error = "[%s] ERROR in module 'omwparser': missing geodata." % MODULE_NAME
-			if self.callback:
-				self.callback(None, self.error)
-			return
-		if self.callback:
-			print("[%s] accessing OMW for weatherdata..." % MODULE_NAME)
-		jsonData = self.apiserver(link)
-		if jsonData and self.error is None:
-			if self.callback:
-				print("[%s] accessing OMW successful." % MODULE_NAME)
-			try:
-				jsonData["requested"] = dict()  # add some missing info
-				jsonData["requested"]["cityName"] = self.geodata[0]
-				jsonData["requested"]["lon"] = self.geodata[1]
-				jsonData["requested"]["lat"] = self.geodata[2]
-				now = datetime.now()
-				sunrise = datetime.fromisoformat(jsonData["daily"]["sunrise"][0])
-				sunset = datetime.fromisoformat(jsonData["daily"]["sunset"][0])
-				jsonData["isNight"] = now < sunrise or now > sunset
-				jsonData["hourly"]["yahooCode"] = dict()
-				jsonData["hourly"]["meteoCode"] = dict()
-				for idx in range(len(jsonData["hourly"]["time"])):
-					iconCode = self.convert2icon("OMW", jsonData["hourly"]["weathercode"][idx])
-					if iconCode:
-						jsonData["hourly"]["yahooCode"][idx] = iconCode.get("yahooCode", "NA")
-						jsonData["hourly"]["meteoCode"][idx] = iconCode.get("meteoCode", ")")
-				jsonData["daily"]["day"] = dict()
-				jsonData["daily"]["shortDay"] = dict()
-				jsonData["daily"]["yahooCode"] = dict()
-				jsonData["daily"]["meteoCode"] = dict()
-				for idx, forecast in enumerate(jsonData["daily"]["time"]):
-					currdate = datetime.fromisoformat(forecast)
-					jsonData["daily"]["day"][idx] = currdate.strftime("%A")
-					jsonData["daily"]["shortDay"][idx] = currdate.strftime("%a")
-					iconCode = self.convert2icon("OMW", jsonData["daily"]["weathercode"][idx])
-					if iconCode:
-						jsonData["daily"]["yahooCode"][idx] = iconCode.get("yahooCode", "NA")
-						jsonData["daily"]["meteoCode"][idx] = iconCode.get("meteoCode", ")")
-			except Exception as err:
-				self.error = "[%s] ERROR in module 'omwparser': general error. %s" % (MODULE_NAME, str(err))
 				jsonData = None
 			self.info = jsonData
 		if self.callback:
@@ -677,6 +677,7 @@ class Weatherinfo:
 					reduced["latitude"] = self.info["currentLocation"]["latitude"]
 					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
 					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
+					reduced["precunit"] = precunit = "%"
 					reduced["current"] = dict()
 					reduced["current"]["observationTime"] = self.info["lastUpdated"]
 					reduced["current"]["sunrise"] = self.info["forecast"][0]["almanac"]["sunrise"]
@@ -686,26 +687,27 @@ class Weatherinfo:
 					reduced["current"]["meteoCode"] = current["meteoCode"]
 					reduced["current"]["temp"] = current["currentTemperature"]
 					reduced["current"]["feelsLike"] = current["feels"].replace("°", "").strip()
-					reduced["current"]["humidity"] = current["humidity"].replace("%", "").strip()
+					reduced["current"]["humidity"] = current["humidity"].strip()
+					reduced["current"]["precipitation"] = current["precipitation"]["children"].strip().replace("%", "")
 					reduced["current"]["windSpeed"] = current["windSpeed"].replace("km/h", "").replace("mph", "").strip()
 					windDir = current["windDir"]
-					reduced["current"]["windDir"] = str(windDir)
+					reduced["current"]["windDir"] = "%s" % windDir
 					reduced["current"]["windDirSign"] = self.directionsign(windDir)
 					date = current["date"]
 					reduced["current"]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 					reduced["current"]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
 					reduced["current"]["date"] = date
 					reduced["current"]["text"] = current["shortCap"]
-					reduced["current"]["minTemp"] = str(self.info["forecast"][0]["lowTemp"])
-					reduced["current"]["maxTemp"] = str(self.info["forecast"][0]["highTemp"])
+					reduced["current"]["minTemp"] = "%s" % self.info["forecast"][0]["lowTemp"]
+					reduced["current"]["maxTemp"] = "%s" % self.info["forecast"][0]["highTemp"]
 					forecast = self.info["forecast"]
 					reduced["forecast"] = dict()
 					for idx in range(6):  # forecast of today and next 5 days
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = forecast[idx]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = forecast[idx]["meteoCode"]
-						reduced["forecast"][idx]["minTemp"] = str(forecast[idx]["lowTemp"])
-						reduced["forecast"][idx]["maxTemp"] = str(forecast[idx]["highTemp"])
+						reduced["forecast"][idx]["minTemp"] = "%s" % forecast[idx]["lowTemp"]
+						reduced["forecast"][idx]["maxTemp"] = "%s" % forecast[idx]["highTemp"]
 						date = forecast[idx]["date"]
 						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
@@ -719,10 +721,11 @@ class Weatherinfo:
 				try:
 					reduced["source"] = "O-M Weather"
 					reduced["name"] = self.info["requested"]["cityName"]
-					reduced["longitude"] = str(self.info["longitude"])
-					reduced["latitude"] = str(self.info["latitude"])
+					reduced["longitude"] = "%s" % self.info["longitude"]
+					reduced["latitude"] = "%s" % self.info["latitude"]
 					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
 					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
+					reduced["precunit"] = self.info["daily_units"]["precipitation_sum"]
 					isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[:14], "00")
 					reduced["current"] = dict()
 					for idx, current in enumerate(self.info["hourly"]["time"]):
@@ -734,27 +737,28 @@ class Weatherinfo:
 							reduced["current"]["isNight"] = self.info["isNight"]
 							reduced["current"]["yahooCode"] = self.info["hourly"]["yahooCode"][idx]
 							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
-							reduced["current"]["temp"] = str(round(self.info["hourly"]["temperature_2m"][idx]))
-							reduced["current"]["feelsLike"] = str(round(self.info["hourly"]["apparent_temperature"][idx]))
-							reduced["current"]["humidity"] = str(round(self.info["hourly"]["relativehumidity_2m"][idx]))
-							reduced["current"]["windSpeed"] = str(round(self.info["hourly"]["windspeed_10m"][idx]))
+							reduced["current"]["temp"] = "%s" % round(self.info["hourly"]["temperature_2m"][idx])
+							reduced["current"]["feelsLike"] = "%s" % round(self.info["hourly"]["apparent_temperature"][idx])
+							reduced["current"]["humidity"] = "%s%%" % round(self.info["hourly"]["relativehumidity_2m"][idx])
+							reduced["current"]["precipitation"] = "%s" % round(self.info["daily"]["precipitation_sum"][0])
+							reduced["current"]["windSpeed"] = "%s" % round(self.info["hourly"]["windspeed_10m"][idx])
 							windDir = self.info["hourly"]["winddirection_10m"][idx]
-							reduced["current"]["windDir"] = str(windDir)
+							reduced["current"]["windDir"] = "%s" % windDir
 							reduced["current"]["windDirSign"] = self.directionsign(windDir)
 							reduced["current"]["day"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%A")
 							reduced["current"]["shortDay"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%a")
 							reduced["current"]["date"] = current[:10]
 							reduced["current"]["text"] = "N/A"
-							reduced["current"]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][0]))
-							reduced["current"]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][0]))
+							reduced["current"]["minTemp"] = "%s" % round(self.info["daily"]["temperature_2m_min"][0])
+							reduced["current"]["maxTemp"] = "%s" % round(self.info["daily"]["temperature_2m_max"][0])
 							break
 					reduced["forecast"] = dict()
 					for idx in range(6):  # forecast of today and next 5 days
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = self.info["daily"]["yahooCode"][idx]
 						reduced["forecast"][idx]["meteoCode"] = self.info["daily"]["meteoCode"][idx]
-						reduced["forecast"][idx]["maxTemp"] = str(round(self.info["daily"]["temperature_2m_max"][idx]))
-						reduced["forecast"][idx]["minTemp"] = str(round(self.info["daily"]["temperature_2m_min"][idx]))
+						reduced["forecast"][idx]["maxTemp"] = "%s" % round(self.info["daily"]["temperature_2m_max"][idx])
+						reduced["forecast"][idx]["minTemp"] = "%s" % round(self.info["daily"]["temperature_2m_min"][idx])
 						date = self.info["daily"]["time"][idx]
 						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
@@ -769,10 +773,11 @@ class Weatherinfo:
 					current = self.info["list"][0]  # collect current weather data
 					reduced["source"] = "OWM Weather"
 					reduced["name"] = self.info["requested"]["cityName"]
-					reduced["longitude"] = str(self.info["requested"]["lon"])
-					reduced["latitude"] = str(self.info["requested"]["lat"])
+					reduced["longitude"] = "%s" % self.info["requested"]["lon"]
+					reduced["latitude"] = "%s" % self.info["requested"]["lat"]
 					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
 					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
+					reduced["precunit"] = "in" if self.units == "imperial" else "mm"
 					reduced["current"] = dict()
 					isotime = datetime.now(timezone.utc).astimezone().isoformat()
 					reduced["current"]["observationTime"] = "%s%s" % (isotime[:19], isotime[26:])
@@ -781,12 +786,13 @@ class Weatherinfo:
 					reduced["current"]["isNight"] = self.info["isNight"]
 					reduced["current"]["yahooCode"] = current["weather"][0]["yahooCode"]
 					reduced["current"]["meteoCode"] = current["weather"][0]["meteoCode"]
-					reduced["current"]["temp"] = str(round(current["main"]["temp"]))
-					reduced["current"]["feelsLike"] = str(round(current["main"]["feels_like"]))
-					reduced["current"]["humidity"] = str(round(current["main"]["humidity"]))
-					reduced["current"]["windSpeed"] = str(round(current["wind"]["speed"] * 3.6))
+					reduced["current"]["temp"] = "%s" % round(current["main"]["temp"])
+					reduced["current"]["feelsLike"] = "%s" % round(current["main"]["feels_like"])
+					reduced["current"]["humidity"] = "%s%%" % round(current["main"]["humidity"])
+					reduced["current"]["precipitation"] = "%s" % round(current["rain"]["3h"]) if "rain" in current["main"] else "0"
+					reduced["current"]["windSpeed"] = "%s" % round(current["wind"]["speed"] * 3.6)
 					windDir = current["wind"]["deg"]
-					reduced["current"]["windDir"] = str(windDir)
+					reduced["current"]["windDir"] = "%s" % windDir
 					reduced["current"]["windDirSign"] = self.directionsign(int(windDir))
 					reduced["current"]["day"] = current["day"]
 					reduced["current"]["shortDay"] = current["shortDay"]
@@ -814,8 +820,8 @@ class Weatherinfo:
 							reduced["forecast"][idx] = dict()
 							reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
 							reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
-							reduced["forecast"][idx]["minTemp"] = str(round(tmin))
-							reduced["forecast"][idx]["maxTemp"] = str(round(tmax))
+							reduced["forecast"][idx]["minTemp"] = "%s" % round(tmin)
+							reduced["forecast"][idx]["maxTemp"] = "%s" % round(tmax)
 							reduced["forecast"][idx]["day"] = forecast["day"]
 							reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
 							reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
@@ -830,8 +836,8 @@ class Weatherinfo:
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else reduced["forecast"][idx - 1]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else reduced["forecast"][idx - 1]["meteoCode"]
-						reduced["forecast"][idx]["minTemp"] = str(round(tmin)) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
-						reduced["forecast"][idx]["maxTemp"] = str(round(tmax)) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
+						reduced["forecast"][idx]["minTemp"] = "%s" % round(tmin) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
+						reduced["forecast"][idx]["maxTemp"] = "%s" % round(tmax) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
 						nextdate = datetime.strptime(reduced["forecast"][idx - 1]["date"], "%Y-%m-%d") + timedelta(1)
 						reduced["forecast"][idx]["day"] = nextdate.strftime("%A")
 						reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
@@ -841,8 +847,8 @@ class Weatherinfo:
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else forecast["weather"][0]["meteoCode"]
-						reduced["forecast"][idx]["minTemp"] = str(round(tmin)) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
-						reduced["forecast"][idx]["maxTemp"] = str(round(tmax)) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
+						reduced["forecast"][idx]["minTemp"] = "%s" % round(tmin) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
+						reduced["forecast"][idx]["maxTemp"] = "%s" % round(tmax) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
 						reduced["forecast"][idx]["day"] = forecast["day"]
 						reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
 						reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
