@@ -258,7 +258,7 @@ class Weatherinfo:
 			return
 		return citylist
 
-	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", callback=None, reduced=False):
+	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", reduced=False, callback=None):
 		self.error = None
 		self.geodata = ("", 0, 0) if geodata is None else geodata
 		self.cityID = cityID
@@ -411,7 +411,7 @@ class Weatherinfo:
 			w.set("lat", self.info["currentLocation"]["latitude"])
 			w.set("timezone", "%s" % int(self.info["source"]["location"]["TimezoneOffset"][: 2]))
 			w.set("alert", current["alertSignificance"])
-			w.set("encodedlocationname", self.info["currentLocation"]["locality"].encode("ascii", "xmlcharrefreplace").decode().replace(" ", "%20").replace("\n", ""))
+			w.set("encodedlocationname", self.info["currentLocation"]["locality"].encode("ascii", "xmlcharrefreplace").decode().replace(" ", "%20").replace("\n", "").strip())
 			root.append(w)
 			c = Element("current")
 			c.set("temperature", current["currentTemperature"])
@@ -424,8 +424,8 @@ class Weatherinfo:
 			c.set("meteocode", current["meteoCode"])
 			c.set("observationtime", self.info["lastUpdated"][11: 19])
 			c.set("observationpoint", self.info["currentLocation"]["locality"])
-			c.set("feelslike", current["feels"].replace("°", ""))
-			c.set("humidity", current["humidity"].replace("%", ""))
+			c.set("feelslike", current["feels"].replace("°", "")).strip()
+			c.set("humidity", current["humidity"].replace("%", "")).strip()
 			c.set("winddisplay", "%s %s" % (current["windSpeed"], self.directionsign(current["windDir"])))
 			c.set("day", self.info["forecast"][0]["dayTextLocaleString"])
 			c.set("shortday", current["shortDay"])
@@ -688,7 +688,7 @@ class Weatherinfo:
 					reduced["current"]["meteoCode"] = current["meteoCode"]
 					reduced["current"]["temp"] = current["currentTemperature"]
 					reduced["current"]["feelsLike"] = current["feels"].replace("°", "").strip()
-					reduced["current"]["humidity"] = current["humidity"]
+					reduced["current"]["humidity"] = current["humidity"].replace("%", "").strip()
 					reduced["current"]["windSpeed"] = current["windSpeed"].replace("km/h", "").replace("mph", "").strip()
 					windDir = current["windDir"]
 					reduced["current"]["windDir"] = "%s" % windDir
@@ -742,7 +742,7 @@ class Weatherinfo:
 							reduced["current"]["meteoCode"] = self.info["hourly"]["meteoCode"][idx]
 							reduced["current"]["temp"] = "%s" % round(self.info["hourly"]["temperature_2m"][idx])
 							reduced["current"]["feelsLike"] = "%s" % round(self.info["hourly"]["apparent_temperature"][idx])
-							reduced["current"]["humidity"] = "%s%%" % round(self.info["hourly"]["relativehumidity_2m"][idx])
+							reduced["current"]["humidity"] = "%s" % round(self.info["hourly"]["relativehumidity_2m"][idx])
 							reduced["current"]["windSpeed"] = "%s" % round(self.info["hourly"]["windspeed_10m"][idx])
 							windDir = self.info["hourly"]["winddirection_10m"][idx]
 							reduced["current"]["windDir"] = "%s" % windDir
@@ -792,7 +792,7 @@ class Weatherinfo:
 					reduced["current"]["meteoCode"] = current["weather"][0]["meteoCode"]
 					reduced["current"]["temp"] = "%s" % round(current["main"]["temp"])
 					reduced["current"]["feelsLike"] = "%s" % round(current["main"]["feels_like"])
-					reduced["current"]["humidity"] = "%s%%" % round(current["main"]["humidity"])
+					reduced["current"]["humidity"] = "%s" % round(current["main"]["humidity"])
 					reduced["current"]["windSpeed"] = "%s" % round(current["wind"]["speed"] * 3.6)
 					windDir = current["wind"]["deg"]
 					reduced["current"]["windDir"] = "%s" % windDir
