@@ -750,7 +750,7 @@ class Weatherinfo:
 							reduced["current"]["day"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%A")
 							reduced["current"]["shortDay"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%a")
 							reduced["current"]["date"] = current[:10]
-							reduced["current"]["text"] = "N/A"
+							reduced["current"]["text"] = ""
 							reduced["current"]["minTemp"] = "%s" % round(daily["temperature_2m_min"][0])
 							reduced["current"]["maxTemp"] = "%s" % round(daily["temperature_2m_max"][0])
 							reduced["current"]["precipitation"] = "%s" % round(daily["precipitation_sum"][0], 1)
@@ -767,7 +767,7 @@ class Weatherinfo:
 						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
 						reduced["forecast"][idx]["date"] = date
-						reduced["forecast"][idx]["text"] = "N/A"
+						reduced["forecast"][idx]["text"] = ""
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo.owm': general error. %s" % (MODULE_NAME, str(err))
 					return
