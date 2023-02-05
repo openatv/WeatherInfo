@@ -320,11 +320,11 @@ class Weatherinfo:
 			startpos = output.find('</style>')
 			endpos = output.find('</script></div>')
 			bereich = output[startpos:endpos]
-			svgdata = findall('<img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
-			todayData = search('class="summaryLineGroupCompact-E1_1">(.*?)" title="(.*?)<a data-t=', bereich)
-			svgsrc = "N/A" if todayData is None else search('src="(.*?)"/><a data-t=', todayData.group(0)).group(1)
+			svgdata = findall(r'<img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
+			todayData = search(r'class="summaryLineGroupCompact-E1_1">(.*?)" title="(.*?)<a data-t=', bereich)
+			svgsrc = "N/A" if todayData is None else search(r'src="(.*?)"/><a data-t=', todayData.group(0)).group(1)
 			svgname = "na" if todayData is None else svgsrc[svgsrc.rfind("/") + 1:svgsrc.rfind(".")]
-			svgdesc = "N/A" if todayData is None else search('title="(.*?)" src=', todayData.group(1))
+			svgdesc = "N/A" if todayData is None else search(r'title="(.*?)" src=', todayData.group(1))
 			# Create DICT "jsonData" from JSON-string and add some useful infos
 			start = '<script id="redux-data" type="application/json">'
 			startpos = output.find(start)
@@ -424,8 +424,8 @@ class Weatherinfo:
 			c.set("meteocode", current["meteoCode"])
 			c.set("observationtime", self.info["lastUpdated"][11: 19])
 			c.set("observationpoint", self.info["currentLocation"]["locality"])
-			c.set("feelslike", current["feels"].replace("°", "")).strip()
-			c.set("humidity", current["humidity"].replace("%", "")).strip()
+			c.set("feelslike", current["feels"].replace("°", "").strip())
+			c.set("humidity", current["humidity"].replace("%", "").strip())
 			c.set("winddisplay", "%s %s" % (current["windSpeed"], self.directionsign(current["windDir"])))
 			c.set("day", self.info["forecast"][0]["dayTextLocaleString"])
 			c.set("shortday", current["shortDay"])
