@@ -345,11 +345,10 @@ class Weatherinfo:
 					jsonData["currentCondition"]["image"]["svgname"] = svgname
 					jsonData["currentCondition"]["image"]["svgdesc"] = svgdesc
 					iconCode = self.convert2icon("MSN", svgname)
-					if iconCode:
-						jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA")
-						jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")")
-						jsonData["currentCondition"]["day"] = currdate.strftime("%A")
-						jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
+					jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA") if iconCode else "NA"
+					jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")") if iconCode else ")"
+					jsonData["currentCondition"]["day"] = currdate.strftime("%A")
+					jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
 					for idx, forecast in enumerate(jsonData["forecast"][: -2]):  # last two entries are not usable
 						forecast["deepLink"] = "%s&day=%s" % (link, idx + 1)  # replaced by minimized link
 						forecast["date"] = (currdate + timedelta(days=idx)).strftime("%Y-%m-%d")
@@ -363,11 +362,10 @@ class Weatherinfo:
 							forecast["image"]["svgsrc"] = "N/A"
 							forecast["image"]["svgdesc"] = "N/A"
 						iconCodes = self.convert2icon("MSN", svgname)
-						if iconCodes:
-							forecast["yahooCode"] = iconCodes.get("yahooCode", "NA")
-							forecast["meteoCode"] = iconCodes.get("meteoCode", ")")
-							forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
-							forecast["shortDay"] = (currdate + timedelta(days=idx)).strftime("%a")
+						forecast["yahooCode"] = iconCodes.get("yahooCode", "NA") if iconCodes else "NA"
+						forecast["meteoCode"] = iconCodes.get("meteoCode", ")") if iconCodes else ")"
+						forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
+						forecast["shortDay"] = (currdate + timedelta(days=idx)).strftime("%a")
 					self.info = jsonData
 				else:
 					if self.callback:
