@@ -435,6 +435,7 @@ class Weatherinfo:
 				f = Element("forecast")
 				f.set("low", "%s" % forecast["lowTemp"])
 				f.set("high", "%s" % forecast["highTemp"])
+				f.set("skycodeday", forecast["normalizedSkyCode"])
 				f.set("skytextday", forecast["cap"])
 				f.set("date", forecast["date"])
 				f.set("svglink", forecast["image"]["svgsrc"])
