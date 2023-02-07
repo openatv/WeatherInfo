@@ -39,7 +39,8 @@ class Weatherinfo:
 						"ClearNightV3": ("31", "C"), "MostlyClearNight": ("33", "C"), "PartlyCloudyNightV2": ("29", "I"),
 						"MostlyCloudyNightV2": ("27", "I"), "HazeSmokeNightV2_106": ("21", "K"), "HailNightV2": ("17", "X"),
 						"LightRainShowerNight": ("45", "Q"), "RainShowersNightV2": ("45", "R"), "N422Snow": ("14", "W"),
-						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "na": ("NA", ")")
+						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "Haze": ("21", "K"),
+						"na": ("NA", ")")
 						}  # mapping: msn -> (yahoo, meteo)
 		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
 						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
@@ -345,11 +346,10 @@ class Weatherinfo:
 					jsonData["currentCondition"]["image"]["svgname"] = svgname
 					jsonData["currentCondition"]["image"]["svgdesc"] = svgdesc
 					iconCode = self.convert2icon("MSN", svgname)
-					if iconCode:
-						jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA")
-						jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")")
-						jsonData["currentCondition"]["day"] = currdate.strftime("%A")
-						jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
+					jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA") if iconCode else "NA"
+					jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")") if iconCode else ")"
+					jsonData["currentCondition"]["day"] = currdate.strftime("%A")
+					jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
 					for idx, forecast in enumerate(jsonData["forecast"][: -2]):  # last two entries are not usable
 						forecast["deepLink"] = "%s&day=%s" % (link, idx + 1)  # replaced by minimized link
 						forecast["date"] = (currdate + timedelta(days=idx)).strftime("%Y-%m-%d")
@@ -363,11 +363,10 @@ class Weatherinfo:
 							forecast["image"]["svgsrc"] = "N/A"
 							forecast["image"]["svgdesc"] = "N/A"
 						iconCodes = self.convert2icon("MSN", svgname)
-						if iconCodes:
-							forecast["yahooCode"] = iconCodes.get("yahooCode", "NA")
-							forecast["meteoCode"] = iconCodes.get("meteoCode", ")")
-							forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
-							forecast["shortDay"] = (currdate + timedelta(days=idx)).strftime("%a")
+						forecast["yahooCode"] = iconCodes.get("yahooCode", "NA") if iconCodes else "NA"
+						forecast["meteoCode"] = iconCodes.get("meteoCode", ")") if iconCodes else ")"
+						forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
+						forecast["shortDay"] = (currdate + timedelta(days=idx)).strftime("%a")
 					self.info = jsonData
 				else:
 					if self.callback:
@@ -435,6 +434,7 @@ class Weatherinfo:
 				f = Element("forecast")
 				f.set("low", "%s" % forecast["lowTemp"])
 				f.set("high", "%s" % forecast["highTemp"])
+				f.set("skycodeday", forecast["normalizedSkyCode"])
 				f.set("skytextday", forecast["cap"])
 				f.set("date", forecast["date"])
 				f.set("svglink", forecast["image"]["svgsrc"])
