@@ -176,13 +176,11 @@ class Weatherinfo:
 			return
 
 		if self.mode == "msn":
-			for special in [",", ";", "&", "|", "!", "(", "[", "{"]:
-				items = cityname.split(special)
-				cityname = "".join(items[:-1]).strip() if len(items) > 1 else items[0]
+			cityname, country = self.separateCityCountry(cityname)
 			apicode = "454445433343423734434631393042424245323644463739333846334439363145393235463539333"
 			apikey = bytes.fromhex(apicode[:-1]).decode('utf-8')
-			linkcode = "68747470733a2f2f7777772e62696e672e636f6d2f6170692f76362f506c616365732f4175746f537567676573743f61707069643d257326636f756e743d313526713d2573267365746d6b743d2573267365746c616e673d25737"
-			link = bytes.fromhex(linkcode[:-1]).decode('utf-8') % (apikey, cityname, scheme, scheme)
+			linkcode = "68747470733A2F2F7777772E62696E672E636F6D2F6170692F76362F506C616365732F4175746F537567676573743F61707069643D257326636F756E743D313526713D25732573267365746D6B743D2573267365746C616E673D25733"
+			link = bytes.fromhex(linkcode[:-1]).decode('utf-8') % (apikey, cityname, "" if country is None else ",%s" % country, scheme, scheme)
 			jsonData = self.apiserver(link)
 			if not jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist.msn': city '%s' not found on the server, continue with '%s'." % (MODULE_NAME, cityname)
@@ -202,11 +200,8 @@ class Weatherinfo:
 				return
 
 		elif self.mode == "omw":
-			for special in [",", ";", "&", "|", "!", "(", "[", "{"]:
-				items = cityname.split(special)
-				cityname = "".join(items[:-1]).strip() if len(items) > 1 else items[0]
-			country = "".join(items[-1:]).strip().upper() if len(items) > 1 else None
-			link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=10&name=%s" % (scheme[:2], cityname)
+			cityname, country = self.separateCityCountry(cityname)
+			link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=10&name=%s%s" % (scheme[:2], cityname, "" if country is None else ",%s" % country)
 			jsonData = self.apiserver(link)
 			if not jsonData or "results" not in jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist.owm': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
@@ -232,11 +227,8 @@ class Weatherinfo:
 			special = {"br": "pt_br", "se": "sv, se", "es": "sp, es", "ua": "ua, uk", "cn": "zh_cn"}
 			if scheme[:2] in special:
 				scheme = special[scheme[:2]]
-			for special in [",", ";", "&", "|", "!", "(", "[", "{"]:
-				items = cityname.split(special)
-				cityname = "".join(items[:-1]).strip() if len(items) > 1 else items[0]
-			country = "".join(items[-1:]).strip().upper() if len(items) > 1 else None
-			link = "http://api.openweathermap.org/geo/1.0/direct?q=%s,%s&lang=%s&limit=15&appid=%s" % (cityname, country, scheme[:2], self.apikey)
+			cityname, country = self.separateCityCountry(cityname)
+			link = "http://api.openweathermap.org/geo/1.0/direct?q=%s%s&lang=%s&limit=15&appid=%s" % (cityname, "" if country is None else ",%s" % country, scheme[:2], self.apikey)
 			jsonData = self.apiserver(link)
 			if not jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist.owm': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
@@ -260,6 +252,16 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'getCitylist': unknown mode." % MODULE_NAME
 			return
 		return citylist
+
+	def separateCityCountry(self, cityname):
+			country = None
+			for special in [",", ";", "()", "[]", "{}", "&", "|", "!"]:
+				items = cityname.split(special[0])
+				if len(items) > 1:
+					cityname = "".join(items[:-1]).strip()
+					country = "".join(items[-1:]).strip().upper().replace(special[-1], "")
+					break
+			return cityname, country
 
 	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", reduced=False, callback=None):
 		self.error = None
@@ -986,7 +988,7 @@ def main(argv):
 	geodata = None
 	info = None
 
-	helpstring = "Weatherinfo v1.5: try 'Weatherinfo -h' for more information"
+	helpstring = "Weatherinfo v1.6: try 'Weatherinfo -h' for more information"
 	try:
 		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "control ="])
 	except GetoptError:
