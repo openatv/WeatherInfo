@@ -39,8 +39,7 @@ class Weatherinfo:
 						"ClearNightV3": ("31", "C"), "MostlyClearNight": ("33", "C"), "PartlyCloudyNightV2": ("29", "I"),
 						"MostlyCloudyNightV2": ("27", "I"), "HazeSmokeNightV2_106": ("21", "K"), "HailNightV2": ("17", "X"),
 						"LightRainShowerNight": ("45", "Q"), "RainShowersNightV2": ("45", "R"), "N422Snow": ("14", "W"),
-						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "Haze": ("21", "K"),
-						"na": ("NA", ")")
+						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "Haze": ("21", "K")
 						}  # mapping: msn -> (yahoo, meteo)
 		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
 						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
@@ -60,8 +59,7 @@ class Weatherinfo:
 						"615": ("6", "W"), "616": ("5", "W"), "620": ("14", "U"), "621": ("42", "U"), "622": ("13", "V"),
 						"701": ("20", "M"), "711": ("22", "J"), "721": ("21", "E"), "731": ("19", "J"), "741": ("20", "E"),
 						"751": ("19", "J"), "761": ("19", "J"), "762": ("22", "J"), "771": ("23", "F"), "781": ("0", "F"),
-						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N"),
-						"na": ("NA", ")")
+						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N")
 						}  # mapping: owm -> (yahoo, meteo)
 		self.omwDescs = {
 						"0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
@@ -311,7 +309,7 @@ class Weatherinfo:
 			print("[%s] accessing MSN for weatherdata..." % MODULE_NAME)
 		link += "in-%s?weadegreetype=%s" % (quote(self.geodata[0]), degunit)
 		try:
-			response = get(link)
+			response = get(link, timeout=(3.05, 6))
 			response.raise_for_status()
 		except exceptions.RequestException as err:
 			self.error = "[%s] ERROR in module 'msnparser': '%s" % (MODULE_NAME, str(err))
@@ -470,7 +468,7 @@ class Weatherinfo:
 		self.error = None
 		if link:
 			try:
-				response = get(link)
+				response = get(link, timeout=(3.05, 6))
 				response.raise_for_status()
 			except exceptions.RequestException as err:
 				self.error = "[%s] ERROR in module 'apiserver': '%s" % (MODULE_NAME, str(err))
@@ -680,7 +678,8 @@ class Weatherinfo:
 					reduced["name"] = self.info["currentLocation"]["displayName"].split(",")[0]
 					reduced["longitude"] = self.info["currentLocation"]["longitude"]
 					reduced["latitude"] = self.info["currentLocation"]["latitude"]
-					reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
+					tempunit = "°F" if self.units == "imperial" else "°C"
+					reduced["tempunit"] = tempunit
 					reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
 					reduced["precunit"] = "%"
 					reduced["current"] = dict()
@@ -723,7 +722,7 @@ class Weatherinfo:
 						reduced["forecast"][idx]["date"] = forecast[idx]["date"]
 						reduced["forecast"][idx]["text"] = forecast[idx]["cap"]
 						reduced["forecast"][idx]["summary0"] = forecast[idx]["summaries"][0]
-						reduced["forecast"][idx]["summary1"] = forecast[idx]["summaries"][1]
+						reduced["forecast"][idx]["summary1"] = forecast[idx]["summaries"][1].replace("°.", " %s." % tempunit)
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo.msn': general error. %s" % (MODULE_NAME, str(err))
 					return
