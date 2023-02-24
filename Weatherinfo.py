@@ -13,7 +13,6 @@
 
 from sys import exit, argv
 from json import dump, loads
-from re import search, findall
 from urllib.request import quote
 from datetime import datetime, timedelta, timezone
 from requests import get, exceptions
@@ -29,27 +28,33 @@ DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be 
 class Weatherinfo:
 	def __init__(self, newmode="msn", apikey=None):
 
-		self.msnCodes = {"SunnyDayV3": ("32", "B"), "MostlySunnyDay": ("34", "B"), "PartlyCloudyDayV3": ("30", "H"),
-						"MostlyCloudyDayV2": ("28", "H"), "CloudyV3": ("26", "Y"), "BlowingHailV2": ("17", "X"),
-						"HeavyDrizzle": ("9", "Q"), "BlowingSnowV2": ("13", "W"), "LightRainV2": ("12", "Q"), "FogV2": ("20", "E"),
-						"FreezingRainV2": ("10", "X"), "HazySmokeV2": ("21", "J"), "ModerateRainV2": ("12", "Q"),
-						"HeavySnowV2": ("15", "W"), "HailDayV2": ("17", "X"), "LightRainV3": ("9", "Q"),
-						"LightRainShowerDay": ("11", "Q"), "LightSnowV2": ("14", "V"), "RainShowersDayV2": ("39", "R"),
-						"RainSnowV2": ("5", "W"), "SnowShowersDayV2": ("16", "W"), "ThunderstormsV2": ("4", "0"),
-						"ClearNightV3": ("31", "C"), "MostlyClearNight": ("33", "C"), "PartlyCloudyNightV2": ("29", "I"),
-						"MostlyCloudyNightV2": ("27", "I"), "HazeSmokeNightV2_106": ("21", "K"), "HailNightV2": ("17", "X"),
-						"LightRainShowerNight": ("45", "Q"), "RainShowersNightV2": ("45", "R"), "N422Snow": ("14", "W"),
-						"RainSnowShowersNightV2": ("5", "W"), "SnowShowersNightV2": ("46", "W"), "Haze": ("21", "K")
+		self.msnCodes = {"d000": ("32", "B"), "d100": ("34", "B"), "d200": ("30", "H"), "d210": ("12", "Q"),
+						"d211": ("5", "W"), "d212": ("14", "V"), "d220": ("11", "Q"), "d221": ("42", "V"),
+						"d222": ("16", "W"), "d240": ("4", "0"), "d300": ("28", "H"), "d310": ("11", "Q"),
+						"d311": ("5", "W"), "d312": ("14", "V"), "d320": ("39", "R"), "d321": ("5", "W"),
+						"d322": ("16", "W"), "d340": ("4", "0"), "d400": ("26", "Y"), "d410": ("9", "Q"),
+						"d411": ("5", "W"), "d412": ("14", "V"), "d420": ("9", "Q"), "d421": ("5", "W"),
+						"d422": ("16", "W"), "d430": ("12", "Q"), "d431": ("5", "W"), "d432": ("15", "W"),
+						"d440": ("4", "0"), "d500": ("28", "H"), "d600": ("20", "E"), "d605": ("17", "X"),
+						"d705": ("17", "X"), "d900": ("21", "M"), "d905": ("17", "X"), "d907": ("21", "M"),
+						"n000": ("31", "C"), "n100": ("33", "C"), "n200": ("29", "I"), "n210": ("45", "Q"),
+						"n211": ("5", "W"), "n212": ("46", "W"), "n220": ("45", "Q"), "n221": ("5", "W"),
+						"n222": ("46", "W"), "n240": ("47", "Z"), "n300": ("27", "I"), "n310": ("45", "Q"),
+						"n311": ("11", "Q"), "n312": ("46", "W"), "n320": ("45", "R"), "n321": ("5", "W"),
+						"n322": ("46", "W"), "n340": ("47", "Z"), "n400": ("26", "Y"), "n410": ("9", "Q"),
+						"n411": ("5", "W"), "n412": ("14", "V"), "n420": ("9", "Q"), "n421": ("5", "W"),
+						"n422": ("14", "W"), "n430": ("12", "Q"), "n431": ("5", "W"), "n432": ("15", "W"),
+						"n440": ("4", "0"), "n500": ("29", "I"), "n600": ("20", "E"), "n605": ("17", "X"),
+						"n705": ("17", "X"), "n900": ("21", "M"), "n905": ("17", "X"), "n907": ("21", "M")
 						}  # mapping: msn -> (yahoo, meteo)
-		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"), "48": ("21", "J"),
-						"51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"), "57": ("10", "U"),
-						"61": ("9", "Q"), "63": ("11", "R"), "65": ("12", "T"), "66": ("8", "R"), "67": ("7", "W"),
-						"71": ("42", "V"), "73": ("14", "U"), "75": ("41", "W"), "77": ("35", "X"), "80": ("9", "Q"),
-						"81": ("11", "Q"), "82": ("12", "T"), "85": ("42", "V"), "86": ("43", "W"), "95": ("38", "P"),
-						"96": ("4", "O"), "99": ("4", "Z")
+		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"),
+						"48": ("21", "J"), "51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"),
+						"57": ("10", "U"), "61": ("9", "Q"), "63": ("11", "R"), "65": ("12", "T"), "66": ("8", "R"),
+						"67": ("7", "W"), "71": ("42", "V"), "73": ("14", "U"), "75": ("41", "W"), "77": ("35", "X"),
+						"80": ("9", "Q"), "81": ("11", "Q"), "82": ("12", "T"), "85": ("42", "V"), "86": ("43", "W"),
+						"95": ("38", "P"), "96": ("4", "O"), "99": ("4", "Z")
 						}  # mapping: omw -> (yahoo, meteo)
-		self.owmCodes = {
-						"200": ("37", "O"), "201": ("4", "O"), "202": ("3", "P"), "210": ("37", "O"), "211": ("4", "O"),
+		self.owmCodes = {"200": ("37", "O"), "201": ("4", "O"), "202": ("3", "P"), "210": ("37", "O"), "211": ("4", "O"),
 						"212": ("3", "P"), "221": ("3", "O"), "230": ("37", "O"), "231": ("38", "O"), "232": ("38", "O"),
 						"300": ("9", "Q"), "301": ("9", "Q"), "302": ("9", "Q"), "310": ("9", "Q"), "311": ("9", "Q"),
 						"312": ("9", "R"), "313": ("11", "R"), "314": ("12", "R"), "321": ("11", "R"), "500": ("9", "Q"),
@@ -61,6 +66,27 @@ class Weatherinfo:
 						"751": ("19", "J"), "761": ("19", "J"), "762": ("22", "J"), "771": ("23", "F"), "781": ("0", "F"),
 						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N")
 						}  # mapping: owm -> (yahoo, meteo)
+		self.msnDescs = {"d000": "SunnyDayV3", "d100": "MostlySunnyDay", "d200": "D200PartlySunny", "d210": "D210LightRainShowers",
+						"d211": "D211LightRainSnowShowers", "d212": "D212LightSnowShowers", "d220": "LightRainShowerDay",
+						"d221": "D221RainSnowShowers", "d222": "SnowShowersDayV2", "d240": "D240Tstorms",
+						"d300": "MostlyCloudyDayV2", "d310": "D310LightRainShowers", "d311": "D311LightRainSnowShowers",
+						"d312": "LightSnowShowersDay", "d320": "RainShowersDayV2", "d321": "D321RainSnowShowers",
+						"d322": "SnowShowersDayV2", "d340": "D340Tstorms", "d400": "CloudyV3", "d410": "LightRainV3",
+						"d411": "RainSnowV2", "d412": "LightSnowV2", "d420": "HeavyDrizzle", "d421": "RainSnowV2",
+						"d422": "Snow", "d430": "ModerateRainV2", "d431": "RainSnowV2", "d432": "HeavySnowV2",
+						"d440": "ThunderstormsV2", "d500": "MostlyCloudyDayV2", "d600": "FogV2", "d605": "IcePelletsV2",
+						"d705": "BlowingHailV2", "d900": "Haze", "d905": "BlowingHailV2", "d907": "Haze",
+						"n000": "ClearNightV3", "n100": "MostlyClearNight", "n200": "PartlyCloudyNightV2",
+						"n210": "N210LightRainShowers", "n211": "N211LightRainSnowShowers", "n212": "N212LightSnowShowers",
+						"n220": "LightRainShowerNight", "n221": "N221RainSnowShowers", "n222": "N222SnowShowers",
+						"n240": "N240Tstorms", "n300": "MostlyCloudyNightV2", "n310": "N310LightRainShowers",
+						"n311": "N311LightRainSnowShowers", "n312": "LightSnowShowersNight", "n320": "RainShowersNightV2",
+						"n321": "N321RainSnowShowers", "n322": "N322SnowShowers", "n340": "N340Tstorms", "n400": "CloudyV3",
+						"n410": "LightRainV3", "n411": "RainSnowV2", "n412": "LightSnowV2", "n420": "HeavyDrizzle",
+						"n421": "RainSnowShowersNightV2", "n422": "N422Snow", "n430": "ModerateRainV2", "n431": "RainSnowV2",
+						"n432": "HeavySnowV2", "n440": "ThunderstormsV2", "n500": "PartlyCloudyNightV2", "n600": "FogV2",
+						"n605": "BlowingHailV2", "n705": "BlowingHailV2", "n900": "Haze", "n905": "BlowingHailV2", "n907": "Haze"
+						}
 		self.omwDescs = {
 						"0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
 						"53": "moderate drizzle", "55": "dense intensity drizzle", "56": "light freezing drizzle", "57": "dense intensity freezing drizzle",
@@ -81,7 +107,7 @@ class Weatherinfo:
 						"613": "Shower sleet", "615": "Light rain and snow", "616": "Rain and snow", "620": "Light shower snow", "621": "Shower snow",
 						"622": "Heavy shower snow", "701": "mist", "711": "Smoke", "721": "Haze", "731": "sand/ dust whirls", "741": "fog", "751": "sand",
 						"761": "dust", "762": "volcanic ash", "771": "squalls", "781": "tornado", "800": "clear sky", "801": "few clouds: 11-25%",
-						"802": "scattered clouds: 25-50%", "803": "broken clouds: 51-84%", "804": "overcast clouds: 85-100%", "na": "not available"
+						"802": "scattered clouds: 25-50%", "803": "broken clouds: 51-84%", "804": "overcast clouds: 85-100%"
 						}  # cleartext description of owm-weathercodes
 		self.yahooDescs = {
 						"0": "tornado", "1": "tropical storm", "2": "hurricane", "3": "severe thunderstorms", "4": "thunderstorms", "5": "mixed rain and snow",
@@ -178,10 +204,13 @@ class Weatherinfo:
 			apicode = "454445433343423734434631393042424245323644463739333846334439363145393235463539333"
 			apikey = bytes.fromhex(apicode[:-1]).decode('utf-8')
 			linkcode = "68747470733A2F2F7777772E62696E672E636F6D2F6170692F76362F506C616365732F4175746F537567676573743F61707069643D257326636F756E743D313526713D25732573267365746D6B743D2573267365746C616E673D25733"
-			link = bytes.fromhex(linkcode[:-1]).decode('utf-8') % (apikey, cityname, "" if country is None else ",%s" % country, scheme, scheme)
-			jsonData = self.apiserver(link)
+			for city in [cityname, cityname.split(" ")[0]]:
+				link = bytes.fromhex(linkcode[:-1]).decode('utf-8') % (apikey, cityname, "" if country is None else ",%s" % country, scheme, scheme)
+				jsonData = self.apiserver(link)
+				if jsonData:
+					break
 			if not jsonData:
-				self.error = "[%s] ERROR in module 'getCitylist.msn': city '%s' not found on the server, continue with '%s'." % (MODULE_NAME, cityname)
+				self.error = "[%s] ERROR in module 'getCitylist.msn': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
 				return [cityname]
 			citylist = []
 			count = 0
@@ -199,8 +228,11 @@ class Weatherinfo:
 
 		elif self.mode == "omw":
 			cityname, country = self.separateCityCountry(cityname)
-			link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=10&name=%s%s" % (scheme[:2], cityname, "" if country is None else ",%s" % country)
-			jsonData = self.apiserver(link)
+			for city in [cityname, cityname.split(" ")[0]]:
+				link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=10&name=%s%s" % (scheme[:2], city, "" if country is None else ",%s" % country)
+				jsonData = self.apiserver(link)
+				if "latidute" in jsonData:
+					break
 			if not jsonData or "results" not in jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist.owm': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
 				return
@@ -226,8 +258,11 @@ class Weatherinfo:
 			if scheme[:2] in special:
 				scheme = special[scheme[:2]]
 			cityname, country = self.separateCityCountry(cityname)
-			link = "http://api.openweathermap.org/geo/1.0/direct?q=%s%s&lang=%s&limit=15&appid=%s" % (cityname, "" if country is None else ",%s" % country, scheme[:2], self.apikey)
-			jsonData = self.apiserver(link)
+			for city in [cityname, cityname.split(" ")[0]]:
+				link = "http://api.openweathermap.org/geo/1.0/direct?q=%s%s&lang=%s&limit=15&appid=%s" % (city, "" if country is None else ",%s" % country, scheme[:2], self.apikey)
+				jsonData = self.apiserver(link)
+				if jsonData:
+					break
 			if not jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist.owm': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
 				return
@@ -253,11 +288,11 @@ class Weatherinfo:
 
 	def separateCityCountry(self, cityname):
 			country = None
-			for special in [",", ";", "()", "[]", "{}", "&", "|", "!"]:
-				items = cityname.split(special[0])
+			for special in [",", ";", "&", "|", "!"]:
+				items = cityname.split(special)
 				if len(items) > 1:
 					cityname = "".join(items[:-1]).strip()
-					country = "".join(items[-1:]).strip().upper().replace(special[-1], "")
+					country = "".join(items[-1:]).strip().upper()
 					break
 			return cityname, country
 
@@ -303,7 +338,7 @@ class Weatherinfo:
 						"ja-jp": "ja-jp/weather/forecast/", "ko-kr": "ko-kr/weather/forecast/", "th-th": "th-th/weather/forecast/",
 						"vi-vn": "vi-vn/weather/forecast/"
 						}
-		link = "http://www.msn.com/%s" % localisation.get(self.scheme, "en-us/weather/forecast/")  # fallback to general localized url
+		link = "http://www.msn.com/%s" % localisation.get(self.scheme, "en-us/weather/forecast/")  # fallback to general localized url if necessary
 		degunit = "F" if self.units == "imperial" else "C"
 		if self.callback is not None:
 			print("[%s] accessing MSN for weatherdata..." % MODULE_NAME)
@@ -320,15 +355,6 @@ class Weatherinfo:
 			print("[%s] accessing MSN successful." % MODULE_NAME)
 		try:
 			output = response.content.decode("utf-8", "ignore")
-			startpos = output.find('</style>')
-			endpos = output.find('</script></div>')
-			bereich = output[startpos:endpos]
-			svgdata = findall(r'<img class="iconTempPartIcon-E1_1" src="(.*?)" title="(.*?)"/></div>', bereich)
-			todayData = search(r'class="summaryLineGroupCompact-E1_1">(.*?)" title="(.*?)<a data-t=', bereich)
-			svgsrc = "N/A" if todayData is None else search(r'src="(.*?)"/><a data-t=', todayData.group(0)).group(1)
-			svgname = "na" if todayData is None else svgsrc[svgsrc.rfind("/") + 1:svgsrc.rfind(".")]
-			svgdesc = "N/A" if todayData is None else search(r'title="(.*?)" src=', todayData.group(1))
-			# Create DICT "jsonData" from JSON-string and add some useful infos
 			start = '<script id="redux-data" type="application/json">'
 			startpos = output.find(start)
 			endpos = output.find("</script>", startpos)
@@ -344,27 +370,20 @@ class Weatherinfo:
 					currdate = datetime.fromisoformat(jsonData["lastUpdated"])
 					jsonData["currentCondition"]["deepLink"] = link  # replace by minimized link
 					jsonData["currentCondition"]["date"] = currdate.strftime("%Y-%m-%d")  # add some missing info
-					jsonData["currentCondition"]["image"]["svgsrc"] = svgsrc
-					jsonData["currentCondition"]["image"]["svgname"] = svgname
-					jsonData["currentCondition"]["image"]["svgdesc"] = svgdesc
-					iconCode = self.convert2icon("MSN", svgname)
+					symbol = jsonData["currentCondition"]["symbol"]
+					jsonData["currentCondition"]["image"]["svgname"] = self.msnDescs.get(symbol, "N/A")
+					iconCode = self.convert2icon("MSN", symbol)
 					jsonData["currentCondition"]["yahooCode"] = iconCode.get("yahooCode", "NA") if iconCode else "NA"
 					jsonData["currentCondition"]["meteoCode"] = iconCode.get("meteoCode", ")") if iconCode else ")"
+					jsonData["currentCondition"]["dayTextLocaleString"] = jsonData["forecast"][0]["dayTextLocaleString"]
 					jsonData["currentCondition"]["day"] = currdate.strftime("%A")
 					jsonData["currentCondition"]["shortDay"] = currdate.strftime("%a")
 					for idx, forecast in enumerate(jsonData["forecast"][: -2]):  # last two entries are not usable
 						forecast["deepLink"] = "%s&day=%s" % (link, idx + 1)  # replaced by minimized link
 						forecast["date"] = (currdate + timedelta(days=idx)).strftime("%Y-%m-%d")
-						if idx < len(svgdata):
-							svgsrc = svgdata[idx][0]
-							svgname = svgsrc[svgsrc.rfind("/") + 1:svgsrc.rfind(".")]
-							forecast["image"]["svgsrc"] = svgsrc
-							forecast["image"]["svgname"] = svgname
-							forecast["image"]["svgdesc"] = svgdata[idx][1]
-						else:
-							forecast["image"]["svgsrc"] = "N/A"
-							forecast["image"]["svgdesc"] = "N/A"
-						iconCodes = self.convert2icon("MSN", svgname)
+						symbol = forecast["symbol"]
+						forecast["image"]["svgname"] = self.msnDescs.get(symbol, "N/A")
+						iconCodes = self.convert2icon("MSN", symbol)
 						forecast["yahooCode"] = iconCodes.get("yahooCode", "NA") if iconCodes else "NA"
 						forecast["meteoCode"] = iconCodes.get("meteoCode", ")") if iconCodes else ")"
 						forecast["day"] = (currdate + timedelta(days=idx)).strftime("%A")
@@ -419,8 +438,7 @@ class Weatherinfo:
 			c.set("skycode", current["normalizedSkyCode"])
 			c.set("skytext", current["skycode"]["children"])
 			c.set("date", current["date"])
-			c.set("svglink", current["image"]["svgsrc"])
-			c.set("svgdesc", current["image"]["svgname"])
+			c.set("svgname", current["image"]["svgname"])
 			c.set("yahoocode", current["yahooCode"])
 			c.set("meteocode", current["meteoCode"])
 			c.set("observationtime", self.info["lastUpdated"][11: 19])
@@ -439,8 +457,7 @@ class Weatherinfo:
 				f.set("skycodeday", forecast["normalizedSkyCode"])
 				f.set("skytextday", forecast["cap"])
 				f.set("date", forecast["date"])
-				f.set("svglink", forecast["image"]["svgsrc"])
-				f.set("svgdesc", forecast["image"]["svgdesc"])
+				f.set("svgname", forecast["image"]["svgname"])
 				f.set("yahoocode", forecast["yahooCode"])
 				f.set("meteocode", forecast["meteoCode"])
 				f.set("day", forecast["day"])
@@ -462,7 +479,7 @@ class Weatherinfo:
 			except OSError as err:
 				self.error = "[%s] ERROR in module 'writemsnxml': %s" % (MODULE_NAME, str(err))
 		else:
-			self.error = "[%s] ERROR in module 'writemsnxml': no xmldata found." % MODULE_NAME
+			self.error = "[%s] ERROR in module 'writemsnxml': general error." % MODULE_NAME
 
 	def apiserver(self, link):
 		self.error = None
@@ -605,7 +622,7 @@ class Weatherinfo:
 		else:
 			return self.getreducedinfo() if self.reduced else self.info
 
-	def getCitybyID(self, cityID=None):
+	def getCitybyID(self, cityID=None):  # owm's cityID is DEPRECATED
 		self.error = None
 		if self.mode != "owm":
 			self.error = "[%s] ERROR in module 'getCitybyID': unsupported mode '%s', only mode 'owm' is supported" % (MODULE_NAME, self.mode)
@@ -674,6 +691,7 @@ class Weatherinfo:
 			if self.parser is not None and self.mode == "msn":
 				try:
 					current = self.info["currentCondition"]  # collect current weather data
+					forecast = self.info["forecast"]
 					reduced["source"] = "MSN Weather"
 					reduced["name"] = self.info["currentLocation"]["displayName"].split(",")[0]
 					reduced["longitude"] = self.info["currentLocation"]["longitude"]
@@ -685,8 +703,8 @@ class Weatherinfo:
 					reduced["current"] = dict()
 					reduced["current"]["observationPoint"] = self.info["currentLocation"]["displayName"]
 					reduced["current"]["observationTime"] = self.info["lastUpdated"]
-					reduced["current"]["sunrise"] = self.info["forecast"][0]["almanac"]["sunrise"]
-					reduced["current"]["sunset"] = self.info["forecast"][0]["almanac"]["sunset"]
+					reduced["current"]["sunrise"] = forecast[0]["almanac"]["sunrise"]
+					reduced["current"]["sunset"] = forecast[0]["almanac"]["sunset"]
 					isNight = self.info["currentCondition"]["isNight"]
 					reduced["current"]["isNight"] = isNight
 					reduced["current"]["yahooCode"] = current["yahooCode"]
@@ -698,16 +716,16 @@ class Weatherinfo:
 					windDir = current["windDir"]
 					reduced["current"]["windDir"] = "%s" % windDir
 					reduced["current"]["windDirSign"] = self.directionsign(windDir)
+					reduced["current"]["dayTextLocaleString"] = current["dayTextLocaleString"]
 					date = current["date"]
 					reduced["current"]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 					reduced["current"]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
 					reduced["current"]["date"] = date
 					reduced["current"]["text"] = current["shortCap"]
 					reduced["current"]["raintext"] = self.info["nowcasting"]["summary"]
-					reduced["current"]["minTemp"] = "%s" % self.info["forecast"][0]["lowTemp"]
-					reduced["current"]["maxTemp"] = "%s" % self.info["forecast"][0]["highTemp"]
+					reduced["current"]["minTemp"] = "%s" % forecast[0]["lowTemp"]
+					reduced["current"]["maxTemp"] = "%s" % forecast[0]["highTemp"]
 					reduced["current"]["precipitation"] = current["precipitation"]["children"].replace("%", "").strip()
-					forecast = self.info["forecast"]
 					reduced["forecast"] = dict()
 					for idx in range(6):  # collect forecast of today and next 5 days
 						reduced["forecast"][idx] = dict()
@@ -716,13 +734,19 @@ class Weatherinfo:
 						reduced["forecast"][idx]["minTemp"] = "%s" % forecast[idx]["lowTemp"]
 						reduced["forecast"][idx]["maxTemp"] = "%s" % forecast[idx]["highTemp"]
 						reduced["forecast"][idx]["precipitation"] = "%s" % forecast[idx]["precipitation"].replace("%", "").strip()
+						reduced["forecast"][idx]["dayText"] = forecast[idx]["dayTextLocaleString"]
 						date = forecast[idx]["date"]
 						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
 						reduced["forecast"][idx]["date"] = forecast[idx]["date"]
 						reduced["forecast"][idx]["text"] = forecast[idx]["cap"]
-						reduced["forecast"][idx]["summary0"] = forecast[idx]["summaries"][0]
-						reduced["forecast"][idx]["summary1"] = forecast[idx]["summaries"][1].replace("°.", " %s." % tempunit)
+						reduced["forecast"][idx]["daySummary0"] = forecast[idx]["dayNightSummaries"]["dataValue"][0][1][0]
+						reduced["forecast"][idx]["daySummary1"] = forecast[idx]["dayNightSummaries"]["dataValue"][0][1][1].replace("°.", " %s." % tempunit)
+						reduced["forecast"][idx]["nightSummary0"] = forecast[idx]["dayNightSummaries"]["dataValue"][1][1][0]
+						reduced["forecast"][idx]["nightSummary1"] = forecast[idx]["dayNightSummaries"]["dataValue"][1][1][1].replace("°.", " %s." % tempunit)
+						lifedaily = self.info["lifeDaily"]["days"]
+						if idx < len(lifedaily):
+							reduced["forecast"][idx]["umbrellaIndex"] = lifedaily[idx]["umbrellaIndex"]["longsummary2"] if "longsummary2" in lifedaily[idx] else lifedaily[idx]["umbrellaIndex"]["summary"]
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo.msn': general error. %s" % (MODULE_NAME, str(err))
 					return
@@ -759,8 +783,6 @@ class Weatherinfo:
 							reduced["current"]["day"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%A")
 							reduced["current"]["shortDay"] = datetime(int(current[:4]), int(current[5:7]), int(current[8:10])).strftime("%a")
 							reduced["current"]["date"] = current[:10]
-							reduced["current"]["text"] = ""
-							reduced["current"]["raintext"] = ""
 							reduced["current"]["minTemp"] = "%s" % round(daily["temperature_2m_min"][0])
 							reduced["current"]["maxTemp"] = "%s" % round(daily["temperature_2m_max"][0])
 							reduced["current"]["precipitation"] = "%s" % round(daily["precipitation_sum"][0], 1)
@@ -777,9 +799,6 @@ class Weatherinfo:
 						reduced["forecast"][idx]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 						reduced["forecast"][idx]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
 						reduced["forecast"][idx]["date"] = date
-						reduced["forecast"][idx]["text"] = ""
-						reduced["forecast"][idx]["summary0"] = ""
-						reduced["forecast"][idx]["summary1"] = ""
 				except Exception as err:
 					self.error = "[%s] ERROR in module 'getreducedinfo.omw': general error. %s" % (MODULE_NAME, str(err))
 					return
@@ -814,7 +833,6 @@ class Weatherinfo:
 					reduced["current"]["shortDay"] = current["shortDay"]
 					reduced["current"]["date"] = datetime.fromtimestamp(current["dt"]).strftime("%Y-%m-%d")
 					reduced["current"]["text"] = current["weather"][0]["description"]
-					reduced["current"]["raintext"] = ""
 					tmin = 88  # inits for today
 					tmax = -88
 					yahoocode = None
@@ -846,8 +864,6 @@ class Weatherinfo:
 							reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
 							reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
 							reduced["forecast"][idx]["text"] = forecast["weather"][0]["description"]
-							reduced["forecast"][idx]["summary0"] = ""
-							reduced["forecast"][idx]["summary1"] = ""
 							tmin = 88  # inits for next day
 							tmax = -88
 							prec = 0
@@ -867,8 +883,6 @@ class Weatherinfo:
 						reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
 						reduced["forecast"][idx]["date"] = nextdate.strftime("%Y-%m-%d")
 						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
-						reduced["forecast"][idx]["summary0"] = ""
-						reduced["forecast"][idx]["summary1"] = ""
 					elif idx == 5:  # in case day #5 is incomplete: use what we have
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else forecast["weather"][0]["yahooCode"]
@@ -876,12 +890,10 @@ class Weatherinfo:
 						reduced["forecast"][idx]["minTemp"] = "%s" % round(tmin) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
 						reduced["forecast"][idx]["maxTemp"] = "%s" % round(tmax) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
 						reduced["forecast"][idx]["precipitation"] = "%s" % round(prec, 1)
-						reduced["forecast"][idx]["day"] = forecast["day"]
 						reduced["forecast"][idx]["shortDay"] = forecast["shortDay"]
+						reduced["forecast"][idx]["day"] = forecast["day"]
 						reduced["forecast"][idx]["date"] = datetime.fromtimestamp(forecast["dt"]).strftime("%Y-%m-%d")
 						reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
-						reduced["forecast"][idx]["summary0"] = ""
-						reduced["forecast"][idx]["summary1"] = ""
 					reduced["current"]["minTemp"] = reduced["forecast"][0]["minTemp"]  # add missing data for today
 					reduced["current"]["maxTemp"] = reduced["forecast"][0]["maxTemp"]
 					reduced["current"]["precipitation"] = reduced["forecast"][0]["precipitation"]
@@ -916,7 +928,7 @@ class Weatherinfo:
 	def showDescription(self, src):
 		self.error = None
 		src = src.lower()
-		selection = {"msn": None, "owm": self.owmDescs, "omw": self.omwDescs, "yahoo": self.yahooDescs, "meteo": self.meteoDescs}
+		selection = {"msn": self.msnDescs, "owm": self.owmDescs, "omw": self.omwDescs, "yahoo": self.yahooDescs, "meteo": self.meteoDescs}
 		if src is not None and src in selection:
 			descs = selection[src]
 		else:
@@ -925,12 +937,8 @@ class Weatherinfo:
 		print("\n+%s+" % ("-" * 39))
 		print("| {0:<5}{1:<32} |".format("CODE", "DESCRIPTION_%s (COMPLETE)" % src.upper()))
 		print("+%s+" % ("-" * 39))
-		if src == "msn":
-			for desc in self.msnCodes:
-				print("| {0:<5}{1:<32} |".format("none", desc))
-		else:
-			for desc in descs:
-				print("| {0:<5}{1:<32} |".format(desc, descs[desc]))
+		for desc in descs:
+			print("| {0:<5}{1:<32} |".format(desc, descs[desc]))
 		print("+%s+" % ("-" * 39))
 
 	def showConvertrules(self, src, dest):
@@ -956,7 +964,7 @@ class Weatherinfo:
 			if src == "msn":
 				for scode in sCodes:
 					dcode = sCodes[scode][destidx]
-					print("| {0:<5}{1:<32} | {2:<5}{3:<25} |".format("none", scode, dcode, ddescs[dcode]))
+					print("| {0:<5}{1:<32} | {2:<5}{3:<25} |".format(scode, self.msnDescs[scode], dcode, ddescs[dcode]))
 			elif src == "omw":
 				for scode in self.omwCodes:
 					dcode = self.omwCodes[scode][destidx]
@@ -987,7 +995,7 @@ def main(argv):
 	geodata = None
 	info = None
 
-	helpstring = "Weatherinfo v1.6: try 'Weatherinfo -h' for more information"
+	helpstring = "Weatherinfo v1.7: try 'Weatherinfo -h' for more information"
 	try:
 		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "control ="])
 	except GetoptError:
@@ -1066,7 +1074,7 @@ def main(argv):
 			print(WI.error.replace("[__main__]", "").strip())
 			exit()
 		if len(citylist) == 0:
-			print("No city '%s' found on the server. Try another wording.")
+			print("No city '%s' found on the server. Try another wording." % cityname)
 			exit()
 		geodata = citylist[0]
 		if citylist and len(citylist) > 1 and not quiet:
