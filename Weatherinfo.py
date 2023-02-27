@@ -434,7 +434,7 @@ class Weatherinfo:
 			w.set("encodedlocationname", self.info["currentLocation"]["locality"].encode("ascii", "xmlcharrefreplace").decode().replace(" ", "%20").replace("\n", "").strip())
 			root.append(w)
 			c = Element("current")
-			c.set("temperature", current["currentTemperature"])
+			c.set("temperature", str(current["currentTemperature"]))
 			c.set("skycode", current["normalizedSkyCode"])
 			c.set("skytext", current["skycode"]["children"])
 			c.set("date", current["date"])
@@ -452,8 +452,8 @@ class Weatherinfo:
 			w.append(c)
 			for forecast in self.info["forecast"][: -2]:  # last two entries are not usable
 				f = Element("forecast")
-				f.set("low", "%s" % forecast["lowTemp"])
-				f.set("high", "%s" % forecast["highTemp"])
+				f.set("low", "%s" % str(forecast["lowTemp"]))
+				f.set("high", "%s" % str(forecast["highTemp"]))
 				f.set("skycodeday", forecast["normalizedSkyCode"])
 				f.set("skytextday", forecast["cap"])
 				f.set("date", forecast["date"])
@@ -709,7 +709,7 @@ class Weatherinfo:
 					reduced["current"]["isNight"] = isNight
 					reduced["current"]["yahooCode"] = current["yahooCode"]
 					reduced["current"]["meteoCode"] = current["meteoCode"]
-					reduced["current"]["temp"] = current["currentTemperature"]
+					reduced["current"]["temp"] = str(current["currentTemperature"])
 					reduced["current"]["feelsLike"] = current["feels"].replace("°", "").strip()
 					reduced["current"]["humidity"] = current["humidity"].replace("%", "").strip()
 					reduced["current"]["windSpeed"] = current["windSpeed"].replace("km/h", "").replace("mph", "").strip()
@@ -723,16 +723,16 @@ class Weatherinfo:
 					reduced["current"]["date"] = date
 					reduced["current"]["text"] = current["shortCap"]
 					reduced["current"]["raintext"] = self.info["nowcasting"]["summary"]
-					reduced["current"]["minTemp"] = "%s" % forecast[0]["lowTemp"]
-					reduced["current"]["maxTemp"] = "%s" % forecast[0]["highTemp"]
+					reduced["current"]["minTemp"] = "%s" % str(forecast[0]["lowTemp"])
+					reduced["current"]["maxTemp"] = "%s" % str(forecast[0]["highTemp"])
 					reduced["current"]["precipitation"] = current["precipitation"]["children"].replace("%", "").strip()
 					reduced["forecast"] = dict()
 					for idx in range(6):  # collect forecast of today and next 5 days
 						reduced["forecast"][idx] = dict()
 						reduced["forecast"][idx]["yahooCode"] = forecast[idx]["yahooCode"]
 						reduced["forecast"][idx]["meteoCode"] = forecast[idx]["meteoCode"]
-						reduced["forecast"][idx]["minTemp"] = "%s" % forecast[idx]["lowTemp"]
-						reduced["forecast"][idx]["maxTemp"] = "%s" % forecast[idx]["highTemp"]
+						reduced["forecast"][idx]["minTemp"] = "%s" % str(forecast[idx]["lowTemp"])
+						reduced["forecast"][idx]["maxTemp"] = "%s" % str(forecast[idx]["highTemp"])
 						reduced["forecast"][idx]["precipitation"] = "%s" % forecast[idx]["precipitation"].replace("%", "").strip()
 						reduced["forecast"][idx]["dayText"] = forecast[idx]["dayTextLocaleString"]
 						date = forecast[idx]["date"]
