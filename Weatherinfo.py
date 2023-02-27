@@ -1,6 +1,6 @@
 #########################################################################################################
 #                                                                                                       #
-#  Weatherinfo for openTV is a multiplatform tool (runs on Enigma2 & Windows and probably many others)  #
+#  Weatherinfo for openATV is a multiplatform tool (runs on Enigma2 & Windows and probably many others)  #
 #  Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022                                           #
 #  Learn more about the tool by running it in the shell: "python Weatherinfo.py -h"                     #
 #  -----------------------------------------------------------------------------------------------------#
@@ -716,7 +716,7 @@ class Weatherinfo:
 					windDir = current["windDir"]
 					reduced["current"]["windDir"] = "%s" % windDir
 					reduced["current"]["windDirSign"] = self.directionsign(windDir)
-					reduced["current"]["dayTextLocaleString"] = current["dayTextLocaleString"]
+					reduced["current"]["dayText"] = current["dayTextLocaleString"]
 					date = current["date"]
 					reduced["current"]["day"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%A")
 					reduced["current"]["shortDay"] = datetime(int(date[:4]), int(date[5:7]), int(date[8:])).strftime("%a")
