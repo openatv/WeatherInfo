@@ -314,7 +314,7 @@ class Weatherinfo:
 		self.error = None
 		if link:
 			try:
-				response = get(link, headers, timeout=(3.05, 6))
+				response = get(link, headers=headers, timeout=(3.05, 6))
 				response.raise_for_status()
 			except exceptions.RequestException as err:
 				self.error = "[%s] ERROR in module 'apiserver': '%s" % (MODULE_NAME, str(err))
@@ -323,9 +323,9 @@ class Weatherinfo:
 				jsonData = loads(response.content)
 				if jsonData:
 					return jsonData
-				self.error = "[%s] ERROR in module 'apiserver': owm-server access failed." % MODULE_NAME
+				self.error = "[%s] ERROR in module 'apiserver': server access failed." % MODULE_NAME
 			except Exception as err:
-				self.error = "[%s] ERROR in module 'apiserver': invalid json data from OWM-server. %s" % (MODULE_NAME, str(err))
+				self.error = "[%s] ERROR in module 'apiserver': invalid json data from server. %s" % (MODULE_NAME, str(err))
 		else:
 			self.error = "[%s] ERROR in module 'apiserver': missing link." % MODULE_NAME
 
@@ -348,7 +348,7 @@ class Weatherinfo:
 			if self.error:
 				self.callback(None, self.error)
 			else:
-				print("[%s] accessing MSN successful." % MODULE_NAME)
+				print("[%s] MSN successfully accessed.." % MODULE_NAME)
 				self.callback(self.getreducedinfo() if self.reduced else self.info, None)
 		if self.info and self.error is None:
 			return self.getreducedinfo() if self.reduced else self.info
@@ -377,7 +377,7 @@ class Weatherinfo:
 			if self.error:
 				self.callback(None, self.error)
 			else:
-				print("[%s] accessing OMW successful." % MODULE_NAME)
+				print("[%s] OMW successfully accessed." % MODULE_NAME)
 				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		if self.info and self.error is None:
 			return self.getreducedinfo() if self.reduced else self.info
@@ -406,7 +406,7 @@ class Weatherinfo:
 			if self.error:
 				self.callback(None, self.error)
 			else:
-				print("[%s] accessing OWM successful." % MODULE_NAME)
+				print("[%s] OWM successfully accessed.." % MODULE_NAME)
 				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		if self.info and self.error is None:
 			return self.getreducedinfo() if self.reduced else self.info
@@ -551,7 +551,7 @@ class Weatherinfo:
 							umbrellaIndex = self.info["responses"][0]["weather"][0]["lifeDaily"]["days"][0]["umbrellaIndex"]
 							reduced["forecast"][idx]["umbrellaIndex"] = umbrellaIndex["longSummary2"] if "longSummary2" in umbrellaIndex else umbrellaIndex["summary"]
 					except Exception as err:
-						self.error = "[%s] ERROR in module 'getreducedinfo.msn': general error. %s" % (MODULE_NAME, str(err))
+						self.error = "[%s] ERROR in module 'getreducedinfo#msn': general error. %s" % (MODULE_NAME, str(err))
 						return
 
 			elif self.parser is not None and self.mode == "omw":
@@ -620,10 +620,10 @@ class Weatherinfo:
 							reduced["forecast"][idx]["shortDay"] = currdate.strftime("%a")
 							reduced["forecast"][idx]["date"] = currdate.strftime(datefmt)
 					except Exception as err:
-						self.error = "[%s] ERROR in module 'getreducedinfo.omw': general error. %s" % (MODULE_NAME, str(err))
+						self.error = "[%s] ERROR in module 'getreducedinfo#omw': general error. %s" % (MODULE_NAME, str(err))
 						return
 				else:
-					self.error = "[%s] ERROR in module 'getreducedinfo.omw': missing geodata." % MODULE_NAME
+					self.error = "[%s] ERROR in module 'getreducedinfo#omw': missing geodata." % MODULE_NAME
 
 			elif self.parser is not None and self.mode == "owm":
 				if self.geodata:
@@ -636,7 +636,7 @@ class Weatherinfo:
 						reduced["latitude"] = str(self.info["city"]["coord"]["lat"])
 						reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
 						reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
-						reduced["precunit"] = "mm"
+						reduced["precunit"] = "%"
 						reduced["current"] = dict()
 						now = datetime.now()
 						isotime = datetime.now(timezone.utc).astimezone().isoformat()
@@ -672,12 +672,12 @@ class Weatherinfo:
 						meteocode = None
 						text = None
 						idx = 0
-						prec = 0
+						prec = []
 						reduced["forecast"] = dict()
 						for forecast in self.info["list"]:  # collect forecast of today and next 5 days
 							tmin = min(tmin, forecast["main"]["temp_min"])
 							tmax = max(tmax, forecast["main"]["temp_max"])
-							prec += forecast["rain"]["3h"] if "rain" in forecast else 0
+							prec.append(forecast["pop"])
 							if "15:00:00" in forecast["dt_txt"]:  # get weather icon as a representative icon for current day
 								pvdrCode = forecast["weather"][0]["id"]
 								iconCode = self.convert2icon("OWM", pvdrCode)
@@ -700,7 +700,7 @@ class Weatherinfo:
 								reduced["forecast"][idx]["meteoCode"] = meteocode
 								reduced["forecast"][idx]["minTemp"] = round(tmin)
 								reduced["forecast"][idx]["maxTemp"] = round(tmax)
-								reduced["forecast"][idx]["precipitation"] = round(prec, 1)
+								reduced["forecast"][idx]["precipitation"] = str(int(round(sum(prec) / len(prec) * 100, 0))) if len(prec) > 0 else ""
 								currdate = datetime.fromtimestamp(forecast["dt"])
 								reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
 								reduced["forecast"][idx]["day"] = currdate.strftime("%A")
@@ -709,7 +709,7 @@ class Weatherinfo:
 								reduced["forecast"][idx]["text"] = text
 								tmin = 88  # inits for next day
 								tmax = -88
-								prec = 0
+								prec = []
 								yahoocode = None
 								meteocode = None
 								text = None
@@ -720,7 +720,7 @@ class Weatherinfo:
 								reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else reduced["forecast"][idx - 1]["meteoCode"]
 								reduced["forecast"][idx]["minTemp"] = round(tmin) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
 								reduced["forecast"][idx]["maxTemp"] = round(tmax) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
-								reduced["forecast"][idx]["precipitation"] = round(prec, 1)
+								reduced["forecast"][idx]["precipitation"] = str(int(round(sum(prec) / len(prec) * 100, 0))) if len(prec) > 0 else ""
 								nextdate = datetime.strptime(reduced["forecast"][idx - 1]["date"], datefmt) + timedelta(1)
 								reduced["forecast"][idx]["day"] = nextdate.strftime("%A")
 								reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
@@ -734,7 +734,7 @@ class Weatherinfo:
 									reduced["forecast"][idx]["meteoCode"] = meteocode
 								reduced["forecast"][idx]["minTemp"] = round(tmin) if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
 								reduced["forecast"][idx]["maxTemp"] = round(tmax) if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
-								reduced["forecast"][idx]["precipitation"] = round(prec, 1)
+								reduced["forecast"][idx]["precipitation"] = str(int(round(sum(prec) / len(prec) * 100, 0))) if len(prec) > 0 else ""
 								nextdate = datetime.strptime(reduced["forecast"][idx - 1]["date"], datefmt) + timedelta(1)
 								reduced["forecast"][idx]["day"] = nextdate.strftime("%A")
 								reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
@@ -744,10 +744,10 @@ class Weatherinfo:
 						reduced["current"]["maxTemp"] = reduced["forecast"][0]["maxTemp"]
 						reduced["current"]["precipitation"] = reduced["forecast"][0]["precipitation"]
 					except Exception as err:
-						self.error = "[%s] ERROR in module 'getreducedinfo.owm': general error. %s" % (MODULE_NAME, str(err))
+						self.error = "[%s] ERROR in module 'getreducedinfo#owm': general error. %s" % (MODULE_NAME, str(err))
 						return
 				else:
-					self.error = "[%s] ERROR in module 'getreducedinfo.owm': missing geodata." % MODULE_NAME
+					self.error = "[%s] ERROR in module 'getreducedinfo#owm': missing geodata." % MODULE_NAME
 
 			else:
 				self.error = "[%s] ERROR in module 'getreducedinfo': unknown source." % MODULE_NAME
