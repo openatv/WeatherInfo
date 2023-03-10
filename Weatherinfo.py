@@ -559,7 +559,7 @@ class Weatherinfo:
 					try:
 						current = self.info["hourly"]
 						forecast = self.info["daily"]
-						reduced["source"] = "O-M Weather"
+						reduced["source"] = "Open-Meteo Weather"
 						location = self.geodata[0].split(",")
 						reduced["name"] = namefmt % (location[0], location[1]) if len(location) > 1 else location[0]
 						reduced["longitude"] = str(self.info["longitude"])
@@ -629,7 +629,7 @@ class Weatherinfo:
 				if self.geodata:
 					try:
 						current = self.info["list"][0]  # collect current weather data
-						reduced["source"] = "OWM Weather"
+						reduced["source"] = "OpenWeatherMap"
 						location = self.geodata[0].split(",")
 						reduced["name"] = namefmt % (location[0], location[1]) if len(location) > 1 else location[0]
 						reduced["longitude"] = str(self.info["city"]["coord"]["lon"])
@@ -679,14 +679,14 @@ class Weatherinfo:
 							tmax = max(tmax, forecast["main"]["temp_max"])
 							prec.append(forecast["pop"])
 							if "15:00:00" in forecast["dt_txt"]:  # get weather icon as a representative icon for current day
-								pvdrCode = forecast["weather"][0]["id"]
+								pvdrCode = str(forecast["weather"][0]["id"])
 								iconCode = self.convert2icon("OWM", pvdrCode)
 								if iconCode:
 									yahoocode = iconCode.get("yahooCode", "NA")
 									meteocode = iconCode.get("meteoCode", ")")
 								text = forecast["weather"][0]["description"]
 							if "18:00:00" in forecast["dt_txt"]:  # in case we call the forecast late today: get current weather icon
-								pvdrCode = forecast["weather"][0]["id"]
+								pvdrCode = str(forecast["weather"][0]["id"])
 								iconCode = self.convert2icon("OWM", pvdrCode)
 								if iconCode:
 									yahoocode = iconCode.get("yahooCode", "NA")
@@ -696,6 +696,10 @@ class Weatherinfo:
 								reduced["forecast"][idx] = dict()
 								pvdrCode = str(forecast["weather"][0]["id"])
 								reduced["forecast"][idx]["ProviderCode"] = pvdrCode
+								iconCode = self.convert2icon("OWM", pvdrCode)
+								if iconCode:
+									yahoocode = iconCode.get("yahooCode", "NA")
+									meteocode = iconCode.get("meteoCode", ")")
 								reduced["forecast"][idx]["yahooCode"] = yahoocode
 								reduced["forecast"][idx]["meteoCode"] = meteocode
 								reduced["forecast"][idx]["minTemp"] = round(tmin)
