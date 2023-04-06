@@ -489,7 +489,7 @@ class Weatherinfo:
 						forecast = self.info["responses"][0]["weather"][0]["forecast"]["days"]
 						reduced["source"] = "MSN Weather"
 						location = self.geodata[0].split(",")
-						reduced["name"] = namefmt % (location[0], location[1]) if len(location) > 1 else location[0]
+						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
 						reduced["longitude"] = str(source["coordinates"]["lon"])
 						reduced["latitude"] = str(source["coordinates"]["lat"])
 						tempunit = self.info["units"]["temperature"]
@@ -538,7 +538,6 @@ class Weatherinfo:
 							reduced["forecast"][idx]["minTemp"] = str(round(forecast[idx]["daily"]["tempLo"]))
 							reduced["forecast"][idx]["maxTemp"] = str(round(forecast[idx]["daily"]["tempHi"]))
 							reduced["forecast"][idx]["precipitation"] = str(round(forecast[idx]["daily"]["day"]["precip"]))
-							currdate = datetime.fromisoformat(forecast[idx]["daily"]["valid"])
 							reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
 							reduced["forecast"][idx]["day"] = currdate.strftime("%A")
 							reduced["forecast"][idx]["shortDay"] = currdate.strftime("%a")
@@ -550,6 +549,7 @@ class Weatherinfo:
 							reduced["forecast"][idx]["nightSummary1"] = forecast[idx]["daily"]["night"]["summaries"][1].replace("°.", " %s." % tempunit)
 							umbrellaIndex = self.info["responses"][0]["weather"][0]["lifeDaily"]["days"][0]["umbrellaIndex"]
 							reduced["forecast"][idx]["umbrellaIndex"] = umbrellaIndex["longSummary2"] if "longSummary2" in umbrellaIndex else umbrellaIndex["summary"]
+							currdate = currdate + timedelta(1)
 					except Exception as err:
 						self.error = "[%s] ERROR in module 'getreducedinfo#msn': general error. %s" % (MODULE_NAME, str(err))
 						return
@@ -561,7 +561,7 @@ class Weatherinfo:
 						forecast = self.info["daily"]
 						reduced["source"] = "Open-Meteo Weather"
 						location = self.geodata[0].split(",")
-						reduced["name"] = namefmt % (location[0], location[1]) if len(location) > 1 else location[0]
+						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
 						reduced["longitude"] = str(self.info["longitude"])
 						reduced["latitude"] = str(self.info["latitude"])
 						reduced["tempunit"] = self.info["hourly_units"]["temperature_2m"]
@@ -631,7 +631,7 @@ class Weatherinfo:
 						current = self.info["list"][0]  # collect current weather data
 						reduced["source"] = "OpenWeatherMap"
 						location = self.geodata[0].split(",")
-						reduced["name"] = namefmt % (location[0], location[1]) if len(location) > 1 else location[0]
+						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
 						reduced["longitude"] = str(self.info["city"]["coord"]["lon"])
 						reduced["latitude"] = str(self.info["city"]["coord"]["lat"])
 						reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
