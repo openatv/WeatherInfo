@@ -526,7 +526,7 @@ class Weatherinfo:
 						reduced["current"]["day"] = currdate.strftime("%A")
 						reduced["current"]["shortDay"] = currdate.strftime("%a")
 						reduced["current"]["date"] = currdate.strftime(datefmt)
-						reduced["current"]["text"] = current["pvdrCap"]
+						reduced["current"]["text"] = current["cap"]
 						reduced["current"]["raintext"] = self.info["responses"][0]["weather"][0]["nowcasting"]["summary"]
 						reduced["forecast"] = dict()
 						for idx in range(6):  # collect forecast of today and next 5 days
