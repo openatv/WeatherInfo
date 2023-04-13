@@ -526,7 +526,7 @@ class Weatherinfo:
 						reduced["current"]["day"] = currdate.strftime("%A")
 						reduced["current"]["shortDay"] = currdate.strftime("%a")
 						reduced["current"]["date"] = currdate.strftime(datefmt)
-						reduced["current"]["text"] = current["cap"]
+						reduced["current"]["text"] = forecast[0]["hourly"][0]["pvdrCap"]
 						reduced["current"]["raintext"] = self.info["responses"][0]["weather"][0]["nowcasting"]["summary"]
 						reduced["forecast"] = dict()
 						for idx in range(6):  # collect forecast of today and next 5 days
@@ -809,7 +809,7 @@ class Weatherinfo:
 				iconCode = self.convert2icon("MSN", current["symbol"])
 				c.set("yahoocode", iconCode.get("yahooCode", "NA") if iconCode else "NA")
 				c.set("meteocode", iconCode.get("meteoCode", ")") if iconCode else ")")
-				c.set("skytext", current["pvdrCap"])
+				c.set("skytext", forecast[0]["hourly"][0]["pvdrCap"])
 				currdate = datetime.fromisoformat(current["created"])
 				c.set("date", currdate.strftime(datefmt))
 				c.set("observationtime", currdate.strftime("%X"))
@@ -851,8 +851,6 @@ class Weatherinfo:
 					f.write(xmlString)
 			except OSError as err:
 				self.error = "[%s] ERROR in module 'writemsnxml': %s" % (MODULE_NAME, str(err))
-		else:
-			self.error = "[%s] ERROR in module 'writemsnxml': general error." % MODULE_NAME
 
 	def getinfo(self):
 		self.error = None
@@ -933,7 +931,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v1.8: try 'Weatherinfo -h' for more information"
+	helpstring = "Weatherinfo v1.9: try 'Weatherinfo -h' for more information"
 	try:
 		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "control ="])
 	except GetoptError:
