@@ -179,7 +179,7 @@ class Weatherinfo:
 		if src is not None and src in selection:
 			common = selection[src]
 		else:
-			print("[%s] WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES))
+			print("WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (src, SOURCES))
 			return
 		result = dict()
 		if code in common:
@@ -188,7 +188,7 @@ class Weatherinfo:
 		else:
 			result["yahooCode"] = "NA"
 			result["meteoCode"] = "NA"
-			print("[%s] WARNING in module 'convert2icon': key '%s' not found in converting dicts." % (MODULE_NAME, code))
+			print("WARNING in module 'convert2icon': key '%s' not found in converting dicts." % code)
 			return
 		return result
 
@@ -524,7 +524,7 @@ class Weatherinfo:
 						reduced["current"]["day"] = currdate.strftime("%A")
 						reduced["current"]["shortDay"] = currdate.strftime("%a")
 						reduced["current"]["date"] = currdate.strftime(datefmt)
-						reduced["current"]["text"] = forecast[0]["hourly"][0]["pvdrCap"]
+						reduced["current"]["text"] = forecast[0]["hourly"][0]["pvdrCap"] if forecast[0]["hourly"] else current["capAbbr"]
 						reduced["current"]["raintext"] = self.info["responses"][0]["weather"][0]["nowcasting"]["summary"]
 						reduced["forecast"] = dict()
 						for idx in range(6):  # collect forecast of today and next 5 days
@@ -807,7 +807,7 @@ class Weatherinfo:
 				iconCode = self.convert2icon("MSN", current["symbol"])
 				c.set("yahoocode", iconCode.get("yahooCode", "NA") if iconCode else "NA")
 				c.set("meteocode", iconCode.get("meteoCode", ")") if iconCode else ")")
-				c.set("skytext", forecast[0]["hourly"][0]["pvdrCap"])
+				c.set("skytext", forecast[0]["hourly"][0]["pvdrCap"] if forecast[0]["hourly"] else current["capAbbr"])
 				currdate = datetime.fromisoformat(current["created"])
 				c.set("date", currdate.strftime(datefmt))
 				c.set("observationtime", currdate.strftime("%X"))
