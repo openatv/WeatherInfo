@@ -29,24 +29,24 @@ DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be 
 class Weatherinfo:
 	def __init__(self, newmode="msn", apikey=None):
 
-		self.msnCodes = {"d000": ("32", "B"), "d100": ("34", "B"), "d200": ("30", "H"), "d210": ("12", "Q"),
-						"d211": ("5", "W"), "d212": ("14", "V"), "d220": ("11", "Q"), "d221": ("42", "V"),
-						"d222": ("16", "W"), "d240": ("4", "0"), "d300": ("28", "H"), "d310": ("11", "Q"),
-						"d311": ("5", "W"), "d312": ("14", "V"), "d320": ("39", "R"), "d321": ("5", "W"),
-						"d322": ("16", "W"), "d340": ("4", "0"), "d400": ("26", "Y"), "d410": ("9", "Q"),
-						"d411": ("5", "W"), "d412": ("14", "V"), "d420": ("9", "Q"), "d421": ("5", "W"),
-						"d422": ("16", "W"), "d430": ("12", "Q"), "d431": ("5", "W"), "d432": ("15", "W"),
-						"d440": ("4", "0"), "d500": ("28", "H"), "d600": ("20", "E"), "d605": ("17", "X"),
-						"d705": ("17", "X"), "d900": ("21", "M"), "d905": ("17", "X"), "d907": ("21", "M"),
-						"n000": ("31", "C"), "n100": ("33", "C"), "n200": ("29", "I"), "n210": ("45", "Q"),
-						"n211": ("5", "W"), "n212": ("46", "W"), "n220": ("45", "Q"), "n221": ("5", "W"),
-						"n222": ("46", "W"), "n240": ("47", "Z"), "n300": ("27", "I"), "n310": ("45", "Q"),
-						"n311": ("11", "Q"), "n312": ("46", "W"), "n320": ("45", "R"), "n321": ("5", "W"),
-						"n322": ("46", "W"), "n340": ("47", "Z"), "n400": ("26", "Y"), "n410": ("9", "Q"),
-						"n411": ("5", "W"), "n412": ("14", "V"), "n420": ("9", "Q"), "n421": ("5", "W"),
-						"n422": ("14", "W"), "n430": ("12", "Q"), "n431": ("5", "W"), "n432": ("15", "W"),
-						"n440": ("4", "0"), "n500": ("29", "I"), "n600": ("20", "E"), "n605": ("17", "X"),
-						"n705": ("17", "X"), "n900": ("21", "M"), "n905": ("17", "X"), "n907": ("21", "M")
+		self.msnCodes = {"d0000": ("32", "B"), "d1000": ("34", "B"), "d2000": ("30", "H"), "d2100": ("12", "Q"),
+						"d2110": ("5", "W"), "d2120": ("14", "V"), "d2200": ("11", "Q"), "d2210": ("42", "V"),
+						"d2220": ("16", "W"), "d2400": ("4", "0"), "d3000": ("28", "H"), "d3100": ("11", "Q"),
+						"d3110": ("5", "W"), "d3120": ("14", "V"), "d3200": ("39", "R"), "d3210": ("5", "W"),
+						"d3220": ("16", "W"), "d3400": ("4", "0"), "d4000": ("26", "Y"), "d4100": ("9", "Q"),
+						"d4110": ("5", "W"), "d4120": ("14", "V"), "d4200": ("9", "Q"), "d4210": ("5", "W"),
+						"d4220": ("16", "W"), "d4300": ("12", "Q"), "d4310": ("5", "W"), "d4320": ("15", "W"),
+						"d4400": ("4", "0"), "d5000": ("28", "H"), "d6000": ("20", "E"), "d6050": ("17", "X"),
+						"d7050": ("17", "X"), "d9000": ("21", "M"), "d9050": ("17", "X"), "d9070": ("21", "M"),
+						"n0000": ("31", "C"), "n1000": ("33", "C"), "n2000": ("29", "I"), "n2100": ("45", "Q"),
+						"n2110": ("5", "W"), "n2120": ("46", "W"), "n2200": ("45", "Q"), "n2210": ("5", "W"),
+						"n2220": ("46", "W"), "n2400": ("47", "Z"), "n3000": ("27", "I"), "n3100": ("45", "Q"),
+						"n3110": ("11", "Q"), "n3120": ("46", "W"), "n3200": ("45", "R"), "n3210": ("5", "W"),
+						"n3220": ("46", "W"), "n3400": ("47", "Z"), "n4000": ("26", "Y"), "n4100": ("9", "Q"),
+						"n4110": ("5", "W"), "n4120": ("14", "V"), "n4200": ("9", "Q"), "n4210": ("5", "W"),
+						"n4220": ("14", "W"), "n4300": ("12", "Q"), "n4310": ("5", "W"), "n4320": ("15", "W"),
+						"n4400": ("4", "0"), "n5000": ("29", "I"), "n6000": ("20", "E"), "n6050": ("17", "X"),
+						"n7050": ("17", "X"), "n9000": ("21", "M"), "n9050": ("17", "X"), "n9070": ("21", "M")
 						}  # mapping: msn -> (yahoo, meteo)
 		self.omwCodes = {"0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"),
 						"48": ("21", "J"), "51": ("9", "Q"), "53": ("9", "Q"), "55": ("9", "R"), "56": ("8", "V"),
@@ -67,26 +67,26 @@ class Weatherinfo:
 						"751": ("19", "J"), "761": ("19", "J"), "762": ("22", "J"), "771": ("23", "F"), "781": ("0", "F"),
 						"800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N")
 						}  # mapping: owm -> (yahoo, meteo)
-		self.msnDescs = {"d000": "SunnyDayV3", "d100": "MostlySunnyDay", "d200": "D200PartlySunny", "d210": "D210LightRainShowers",
-						"d211": "D211LightRainSnowShowers", "d212": "D212LightSnowShowers", "d220": "LightRainShowerDay",
-						"d221": "D221RainSnowShowers", "d222": "SnowShowersDayV2", "d240": "D240Tstorms",
-						"d300": "MostlyCloudyDayV2", "d310": "D310LightRainShowers", "d311": "D311LightRainSnowShowers",
-						"d312": "LightSnowShowersDay", "d320": "RainShowersDayV2", "d321": "D321RainSnowShowers",
-						"d322": "SnowShowersDayV2", "d340": "D340Tstorms", "d400": "CloudyV3", "d410": "LightRainV3",
-						"d411": "RainSnowV2", "d412": "LightSnowV2", "d420": "HeavyDrizzle", "d421": "RainSnowV2",
-						"d422": "Snow", "d430": "ModerateRainV2", "d431": "RainSnowV2", "d432": "HeavySnowV2",
-						"d440": "ThunderstormsV2", "d500": "MostlyCloudyDayV2", "d600": "FogV2", "d605": "IcePelletsV2",
-						"d705": "BlowingHailV2", "d900": "Haze", "d905": "BlowingHailV2", "d907": "Haze",
-						"n000": "ClearNightV3", "n100": "MostlyClearNight", "n200": "PartlyCloudyNightV2",
-						"n210": "N210LightRainShowers", "n211": "N211LightRainSnowShowers", "n212": "N212LightSnowShowers",
-						"n220": "LightRainShowerNight", "n221": "N221RainSnowShowers", "n222": "N222SnowShowers",
-						"n240": "N240Tstorms", "n300": "MostlyCloudyNightV2", "n310": "N310LightRainShowers",
-						"n311": "N311LightRainSnowShowers", "n312": "LightSnowShowersNight", "n320": "RainShowersNightV2",
-						"n321": "N321RainSnowShowers", "n322": "N322SnowShowers", "n340": "N340Tstorms", "n400": "CloudyV3",
-						"n410": "LightRainV3", "n411": "RainSnowV2", "n412": "LightSnowV2", "n420": "HeavyDrizzle",
-						"n421": "RainSnowShowersNightV2", "n422": "N422Snow", "n430": "ModerateRainV2", "n431": "RainSnowV2",
-						"n432": "HeavySnowV2", "n440": "ThunderstormsV2", "n500": "PartlyCloudyNightV2", "n600": "FogV2",
-						"n605": "BlowingHailV2", "n705": "BlowingHailV2", "n900": "Haze", "n905": "BlowingHailV2", "n907": "Haze"
+		self.msnDescs = {"d0000": "SunnyDayV3", "d1000": "MostlySunnyDay", "d2000": "D200PartlySunny", "d2100": "D210LightRainShowers",
+						"d2110": "D211LightRainSnowShowers", "d2120": "D212LightSnowShowers", "d2200": "LightRainShowerDay",
+						"d2210": "D221RainSnowShowers", "d2220": "SnowShowersDayV2", "d2400": "D240Tstorms",
+						"d3000": "MostlyCloudyDayV2", "d3100": "D310LightRainShowers", "d3110": "D311LightRainSnowShowers",
+						"d3120": "LightSnowShowersDay", "d3200": "RainShowersDayV2", "d3210": "D321RainSnowShowers",
+						"d3220": "SnowShowersDayV2", "d3400": "D340Tstorms", "d4000": "CloudyV3", "d4100": "LightRainV3",
+						"d4110": "RainSnowV2", "d4120": "LightSnowV2", "d4200": "HeavyDrizzle", "d4210": "RainSnowV2",
+						"d4220": "Snow", "d4300": "ModerateRainV2", "d4310": "RainSnowV2", "d4320": "HeavySnowV2",
+						"d4400": "ThunderstormsV2", "d5000": "MostlyCloudyDayV2", "d6000": "FogV2", "d6050": "IcePelletsV2",
+						"d7050": "BlowingHailV2", "d9000": "Haze", "d9050": "BlowingHailV2", "d9070": "Haze",
+						"n0000": "ClearNightV3", "n1000": "MostlyClearNight", "n2000": "PartlyCloudyNightV2",
+						"n2100": "N210LightRainShowers", "n2110": "N211LightRainSnowShowers", "n2120": "N212LightSnowShowers",
+						"n2200": "LightRainShowerNight", "n2210": "N221RainSnowShowers", "n2220": "N222SnowShowers",
+						"n2400": "N240Tstorms", "n3000": "MostlyCloudyNightV2", "n3100": "N310LightRainShowers",
+						"n3110": "N311LightRainSnowShowers", "n3120": "LightSnowShowersNight", "n3200": "RainShowersNightV2",
+						"n3210": "N321RainSnowShowers", "n3220": "N322SnowShowers", "n3400": "N340Tstorms", "n4000": "CloudyV3",
+						"n4100": "LightRainV3", "n4110": "RainSnowV2", "n4120": "LightSnowV2", "n4200": "HeavyDrizzle",
+						"n4210": "RainSnowShowersNightV2", "n4220": "N422Snow", "n4300": "ModerateRainV2", "n4310": "RainSnowV2",
+						"n4320": "HeavySnowV2", "n4400": "ThunderstormsV2", "n5000": "PartlyCloudyNightV2", "n6000": "FogV2",
+						"n6050": "BlowingHailV2", "n7050": "BlowingHailV2", "n9000": "Haze", "n9050": "BlowingHailV2", "n9070": "Haze"
 						}  # cleartext description of msn-weathercodes
 		self.omwDescs = {
 						"0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
@@ -179,8 +179,7 @@ class Weatherinfo:
 		if src is not None and src in selection:
 			common = selection[src]
 		else:
-			self.error = "[%s] WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
-			print(self.error)
+			print("[%s] WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES))
 			return
 		result = dict()
 		if code in common:
@@ -189,8 +188,7 @@ class Weatherinfo:
 		else:
 			result["yahooCode"] = "NA"
 			result["meteoCode"] = "NA"
-			self.error = "[%s] WARNING in module 'convert2icon': key '%s' not found in converting dicts." % (MODULE_NAME, code)
-			print(self.error)
+			print("[%s] WARNING in module 'convert2icon': key '%s' not found in converting dicts." % (MODULE_NAME, code))
 			return
 		return result
 
