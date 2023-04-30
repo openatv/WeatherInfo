@@ -504,7 +504,7 @@ class Weatherinfo:
 						sunrise = datetime.fromisoformat(forecast[0]["almanac"]["sunrise"])
 						sunset = datetime.fromisoformat(forecast[0]["almanac"]["sunset"])
 						reduced["current"]["isNight"] = now < sunrise or now > sunset
-						pvdrCode = current["symbol"]
+						pvdrCode = forecast[0]["hourly"][0]["symbol"] if forecast[0]["hourly"] else current["symbol"]
 						reduced["current"]["ProviderCode"] = pvdrCode
 						iconCode = self.convert2icon("MSN", pvdrCode)
 						reduced["current"]["yahooCode"] = iconCode.get("yahooCode", "NA") if iconCode else "NA"
