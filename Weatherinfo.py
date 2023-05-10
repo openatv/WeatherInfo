@@ -204,7 +204,7 @@ class Weatherinfo:
 			for city in [cityname, cityname.split(" ")[0]]:
 				link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=10&name=%s%s" % (scheme[:2], city, "" if country is None else ",%s" % country)
 				jsonData = self.apiserver(link)
-				if jsonData is not None and "latitude" in jsonData.get("results", [None])[0]:
+				if jsonData is not None and "latitude" in jsonData.get("results", [""])[0]:
 					break
 			if jsonData is None or "results" not in jsonData:
 				self.error = "[%s] ERROR in module 'getCitylist.owm': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
