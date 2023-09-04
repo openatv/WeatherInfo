@@ -49,7 +49,7 @@ class Weatherinfo:
 						 "n422": ("14", "W"), "n430": ("12", "Q"), "n431": ("5", "W"), "n432": ("15", "W"),
 						 "n440": ("4", "0"), "n500": ("29", "I"), "n600": ("20", "E"), "n603": ("10", "U"),
 						 "n605": ("17", "X"), "n705": ("17", "X"), "n900": ("21", "M"), "n905": ("17", "X"),
-						 "n907": ("21", "M") # "xxxx1": "WindyV2"
+						 "n907": ("21", "M")  # "xxxx1": "WindyV2"
 						 }  # mapping: msn -> (yahoo, meteo)
 		self.omwCodes = {
 						 "0": ("32", "B"), "1": ("34", "B"), "2": ("30", "H"), "3": ("28", "N"), "45": ("20", "M"),
@@ -93,7 +93,7 @@ class Weatherinfo:
 						 "n421": "RainSnowShowersNightV2", "n422": "N422SnowV2", "n430": "ModerateRainV2",
 						 "n431": "RainSnowV2", "n432": "HeavySnowV2", "n440": "ThunderstormsV2", "n500": "PartlyCloudyNightV2",
 						 "n600": "FogV2", "n603": "FreezingRainV2", "n605": "BlowingHailV2", "n705": "BlowingHailV2",
-						 "n905": "BlowingHailV2", "n907": "Haze", "n900": "Haze" # "xxxx1": "WindyV2"
+						 "n905": "BlowingHailV2", "n907": "Haze", "n900": "Haze"  # "xxxx1": "WindyV2"
 						 }  # cleartext description of msn-weathercodes
 		self.omwDescs = {
 						 "0": "clear sky", "1": "mainly clear", "2": "partly cloudy", "3": "overcast", "45": "fog", "48": "depositing rime fog", "51": "light drizzle",
@@ -187,7 +187,7 @@ class Weatherinfo:
 			return
 		result = dict()
 		if src == "msn":
-			code = code[:-1] # reduce MSN-code by 'windy'-flag
+			code = code[:-1]  # reduce MSN-code by 'windy'-flag
 		if code in common:
 			result["yahooCode"] = common[code][0]
 			result["meteoCode"] = common[code][1]
@@ -496,7 +496,7 @@ class Weatherinfo:
 						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
 						reduced["longitude"] = str(source["coordinates"]["lon"])
 						reduced["latitude"] = str(source["coordinates"]["lat"])
-						tempunit = self.info["units"]["temperature"]
+						tempunit = self.info["units"]["temperature"].strip("\u200e")
 						reduced["tempunit"] = tempunit
 						reduced["windunit"] = self.info["units"]["speed"]
 						reduced["precunit"] = "%"
