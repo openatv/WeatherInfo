@@ -185,7 +185,7 @@ class Weatherinfo:
 			print("WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (src, SOURCES))
 			return
 		result = dict()
-		if src == "msn" and len(code) > 4:
+		if src == "msn":
 			code = code[:4]  # remove 'windy'-flag in MSN-code if present
 		if code in common:
 			result["yahooCode"] = common[code][0]
