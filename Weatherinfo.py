@@ -19,7 +19,6 @@ from getopt import getopt, GetoptError
 from random import choice
 from time import gmtime, strftime
 from twisted.internet.reactor import callInThread
-from xml.etree.ElementTree import Element, tostring
 
 MODULE_NAME = __name__.split(".")[-1]
 SOURCES = ["msn", "omw", "owm"]  # supported sourcecodes (the order must not be changed)
@@ -186,8 +185,8 @@ class Weatherinfo:
 			print("WARNING in module 'convert2icon': convert source '%s' is unknown. Valid is: %s" % (src, SOURCES))
 			return
 		result = dict()
-		if src == "msn":
-			code = code[:-1]  # reduce MSN-code by 'windy'-flag
+		if src == "msn" and len(code) > 4:
+			code = code[:4]  # remove 'windy'-flag in MSN-code if present
 		if code in common:
 			result["yahooCode"] = common[code][0]
 			result["meteoCode"] = common[code][1]
@@ -442,41 +441,6 @@ class Weatherinfo:
 				return
 		else:
 			self.error = "[%s] ERROR in module 'getCitybyID': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
-
-	def getCitylistbyGeocode(self, geocode=None, scheme="de-de"):
-		self.error = None
-		if geocode:
-			lon = geocode.split(",")[0].strip()
-			lat = geocode.split(",")[1].strip()
-		else:
-			lon = None
-			lat = None
-		if self.mode and not self.mode.startswith("owm"):
-			self.error = "[%s] ERROR in module 'getCitylistbyGeocode': unsupported mode '%s', only mode 'owm' is supported" % (MODULE_NAME, self.mode)
-			return
-		if not lon or not lat:
-			self.error = "[%s] ERROR in module 'getCitylistbyGeocode': incomplete or missing coordinates" % MODULE_NAME
-			return
-		link = "http://api.openweathermap.org/geo/1.0/reverse?lon=%s&lat=%s&limit=15&appid=%s" % (lon, lat, self.apikey)
-		if self.callback:
-			print("[%s] accessing OWM for coordinates..." % MODULE_NAME)
-		jsonData = self.apiserver(link)
-		if jsonData:
-			if self.callback:
-				print("[%s] accessing OWM successful." % MODULE_NAME)
-			try:
-				citylist = []
-				for hit in jsonData:
-					cityname = hit["local_names"][scheme[:2]] if "local_names" in hit and scheme[:2] in hit["local_names"] else hit["name"]
-					state = ", %s" % hit["state"] if "state" in hit else ""
-					country = ", %s" % hit["country"].upper() if "country" in hit else ""
-					citylist.append(("%s%s%s" % (cityname, state, country), hit.get("lon", "N/A"), hit.get("lat", "N/A")))
-				return citylist
-			except Exception as err:
-				self.error = "[%s] ERROR in module 'getCitylistbyGeocode': general error. %s" % (MODULE_NAME, str(err))
-				return
-		else:
-			self.error = "[%s] ERROR in module 'getCitylistbyGeocode': no data." % MODULE_NAME
 
 	def getreducedinfo(self):
 		self.error = None
@@ -786,76 +750,6 @@ class Weatherinfo:
 		else:
 			self.error = "[%s] ERROR in module 'writejson': no data found." % MODULE_NAME
 
-	def getmsnxml(self):  # only MSN supported
-		self.error = None
-		if self.geodata and self.info:
-			try:
-				datefmt = "%Y-%m-%d"
-				source = self.info["responses"][0]["source"]
-				current = self.info["responses"][0]["weather"][0]["current"]
-				forecast = self.info["responses"][0]["weather"][0]["forecast"]["days"]
-				root = Element("weatherdata")
-				root.set("xmlns:xsd", "http://www.w3.org/2001/XMLSchema")
-				root.set("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
-				w = Element("weather")
-				location = self.geodata[0].split(",")
-				locationname = "%s, %s" % (location[0], location[1]) if len(location) > 1 else location[0]
-				w.set("weatherlocationname", locationname)
-				w.set("degreetype", self.info["units"]["temperature"])
-				w.set("long", "%.3f" % source["coordinates"]["lon"])
-				w.set("lat", "%.3f" % source["coordinates"]["lat"])
-				w.set("timezone", str(int(source["location"]["TimezoneOffset"][: 2])))
-				w.set("alert", ", ".join(self.info["responses"][0]["weather"][0]["alerts"]))
-				w.set("encodedlocationname", locationname.encode("ascii", "xmlcharrefreplace").decode().replace(" ", "%20").replace("\n", "").strip())
-				root.append(w)
-				c = Element("current")
-				c.set("temperature", "%.0f" % current["temp"])
-				iconCode = self.convert2icon("MSN", current["symbol"])
-				c.set("yahoocode", iconCode.get("yahooCode", "NA") if iconCode else "NA")
-				c.set("meteocode", iconCode.get("meteoCode", ")") if iconCode else ")")
-				c.set("skytext", forecast[0]["hourly"][0]["pvdrCap"] if forecast[0]["hourly"] else current["capAbbr"])
-				currdate = datetime.fromisoformat(current["created"])
-				c.set("date", currdate.strftime(datefmt))
-				c.set("observationtime", currdate.strftime("%X"))
-				c.set("observationpoint", source["location"]["Name"])
-				c.set("feelslike", "%.0f" % current["feels"])
-				c.set("humidity", "%.0f" % current["rh"])
-				c.set("winddisplay", "%s %s %s" % ("%.0f" % current["windSpd"], self.info["units"]["speed"], self.directionsign(current["windDir"])[2:]))
-				c.set("day", currdate.strftime("%A"))
-				c.set("shortday", currdate.strftime("%a"))
-				c.set("windspeed", "%s %s" % ("%.0f" % current["windSpd"], self.info["units"]["speed"]))
-				c.set("precip", "%.0f" % forecast[0]["daily"]["day"]["precip"])
-				w.append(c)
-				for idx in range(6):  # collect forecast of today and next 5 days
-					f = Element("forecast")
-					f.set("low", "%.0f" % forecast[idx]["daily"]["tempLo"])
-					f.set("high", "%.0f" % forecast[idx]["daily"]["tempHi"])
-					iconCodes = self.convert2icon("MSN", forecast[idx]["daily"]["symbol"])
-					f.set("yahoocodeday", iconCodes.get("yahooCode", "NA") if iconCodes else "NA")
-					f.set("meteocodeday", iconCodes.get("meteoCode", ")") if iconCodes else ")")
-					f.set("skytextday", forecast[idx]["daily"]["pvdrCap"])
-					f.set("date", currdate.strftime(datefmt))
-					f.set("day", currdate.strftime("%A"))
-					f.set("shortday", currdate.strftime("%a"))
-					f.set("precip", "%.0f" % forecast[idx]["daily"]["day"]["precip"])
-					w.append(f)
-				return root
-			except Exception as err:
-				self.error = "[%s] ERROR in module 'getmsnxml': general error. %s" % (MODULE_NAME, str(err))
-		else:
-			self.error = "[%s] ERROR in module 'getmsnxml': missing weather or geodata." % MODULE_NAME
-
-	def writemsnxml(self, filename):  # only MSN supported
-		self.error = None
-		xmlData = self.getmsnxml()
-		if xmlData:
-			xmlString = tostring(xmlData, encoding="utf-8", method="html")
-			try:
-				with open(filename, "wb") as f:
-					f.write(xmlString)
-			except OSError as err:
-				self.error = "[%s] ERROR in module 'writemsnxml': %s" % (MODULE_NAME, str(err))
-
 	def getinfo(self):
 		self.error = None
 		if self.info is None:
@@ -928,18 +822,17 @@ def main(argv):
 	quiet = False
 	json = None
 	reduced = False
-	xml = None
 	specialopt = None
 	control = False
 	cityID = None
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.0: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.1: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
-		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "xml =", "scheme =", "units =", "id =", "control ="])
+		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "scheme =", "units =", "id =", "control ="])
 	except GetoptError:
 		print(helpstring)
 		exit(2)
@@ -952,7 +845,6 @@ def main(argv):
 			"-a, --apikey <data>\t\tAPI-key required for 'owm' only\n"
 			"-j, --json <filename>\t\tFile output formatted in JSON (all modes)\n"
 			"-r, --reduced <filename>\tFile output formatted in JSON (minimum infos only)\n"
-			"-x, --xml <filename>\t\tFile output formatted in XML (mode 'msn' only)\n"
 			"-s, --scheme <data>\t\tCountry scheme (not used by 'omw') {'de-de' is default}\n"
 			"-u, --units <data>\t\tValid units: 'imperial' or 'metric' {'metric' is default}\n"
 			"-i, --id <cityID>\t\tGet cityname by owm's DEPRECATED cityID ('owm' only)\n"
@@ -969,8 +861,6 @@ def main(argv):
 			json = arg
 		elif opt in ("-r", "--reduced"):
 			reduced = arg
-		elif opt in ("-x", "--xml"):
-			xml = arg
 		elif opt in ("-s", "--scheme"):
 			scheme = arg
 		elif opt in ("-m", "--mode"):
@@ -1056,13 +946,6 @@ def main(argv):
 			WI.writereducedjson(reduced)
 			if not quiet:
 				print(successtext % reduced)
-		if xml:
-			if mode == "msn":
-				WI.writemsnxml(xml)
-				if not quiet and not WI.error:
-					print(successtext % xml)
-			else:
-				print("ERROR: XML is only supported in mode 'msn'.\nFile '%s' was not created..." % xml)
 	if WI.error:
 			print(WI.error.replace(mainfmt, "").strip())
 
