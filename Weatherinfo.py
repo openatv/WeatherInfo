@@ -1,6 +1,6 @@
 #########################################################################################################
 #                                                                                                       #
-#  Weatherinfo for openATV is a multiplatform tool (runs on Enigma2 & Windows and probably many others)  #
+#  Weatherinfo for openATV is a multiplatform tool (runs on Enigma2 & Windows and probably many others) #
 #  Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022                                           #
 #  Learn more about the tool by running it in the shell: "python Weatherinfo.py -h"                     #
 #  -----------------------------------------------------------------------------------------------------#
@@ -119,7 +119,7 @@ class Weatherinfo:
 		self.yahooDescs = {
 						 "0": "tornado", "1": "tropical storm", "2": "hurricane", "3": "severe thunderstorms", "4": "thunderstorms", "5": "mixed rain and snow",
 						 "6": "mixed rain and sleet", "7": "mixed snow and sleet", "8": "freezing drizzle", "9": "drizzle", "10": "freezing rain",
-						 "11": "showers", "12": "showers", "13": "snow flurries", "14": "light snow showers", "15": "blowing snow", "16": "snow",
+						 "11": "showers (light)", "12": "showers (heavier)", "13": "snow flurries", "14": "light snow showers", "15": "blowing snow", "16": "snow",
 						 "17": "hail", "18": "sleet", "19": "dust", "20": "foggy", "21": "haze", "22": "smoky", "23": "blustery", "24": "windy", "25": "cold",
 						 "26": "cloudy", "27": "mostly cloudy (night)", "28": "mostly cloudy (day)", "29": "partly cloudy (night)", "30": "partly cloudy (day)",
 						 "31": "clear (night)", "32": "sunny (day)", "33": "fair (night)", "34": "fair (day)", "35": "mixed rain and hail", "36": "hot",
@@ -147,7 +147,6 @@ class Weatherinfo:
 
 	def setmode(self, newmode="msn", apikey=None):
 		self.error = None
-		self.parser = None
 		self.apikey = apikey
 		newmode = newmode.lower()
 		if newmode in SOURCES:
@@ -162,9 +161,11 @@ class Weatherinfo:
 						self.parser = self.owmparser
 					else:
 						self.error = "[%s] ERROR in module 'setmode': API-Key for mode '%s' is missing!" % (MODULE_NAME, newmode)
+						self.parser = None
 						return self.error
 		else:
 			self.error = "[%s] ERROR in module 'setmode': unknown mode '%s'" % (MODULE_NAME, newmode)
+			self.parser = None
 			return self.error
 
 	def directionsign(self, degree):
@@ -275,15 +276,14 @@ class Weatherinfo:
 					break
 			return cityname, country
 
-	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", reduced=False, callback=None):
+	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", reduced=False, callback=None):  # cityID was left only for compatibility reasons
 		self.error = None
 		self.geodata = ("", 0, 0) if geodata is None else geodata
-		self.cityID = cityID
 		self.units = units.lower()
 		self.scheme = scheme.lower()
 		self.callback = callback
 		self.reduced = reduced
-		if not self.geodata[0] and cityID is None:
+		if not self.geodata[0]:
 			self.error = "[%s] ERROR in module 'start': missing cityname for mode '%s'." % (MODULE_NAME, self.mode)
 		elif not self.geodata[1] or not self.geodata[2]:
 			self.error = "[%s] ERROR in module 'start': missing geodata for mode '%s'." % (MODULE_NAME, self.mode)
@@ -393,12 +393,10 @@ class Weatherinfo:
 			if self.callback:
 				self.callback(None, self.error)
 			return
-		if self.cityID:
-			link = "http://api.openweathermap.org/data/2.5/forecast?id=%s&units=%s&lang=%s&appid=%s" % (self.cityID, self.units, self.scheme[: 2], self.apikey)
-		elif self.geodata:
-			link = "https://api.openweathermap.org/data/2.5/forecast?&lon=%s&lat=%s&units=%s&lang=%s&appid=%s" % (self.geodata[1], self.geodata[2], self.units, self.scheme[: 2], self.apikey)
+		if self.geodata:
+			link = "https://api.openweathermap.org/data/3.0/onecall?&lon=%s&lat=%s&units=%s&lang=%s&appid=%s" % (self.geodata[1], self.geodata[2], self.units, self.scheme[:2], self.apikey)
 		else:
-			self.error = "[%s] ERROR in module 'owmparser': missing geodata or cityID." % MODULE_NAME
+			self.error = "[%s] ERROR in module 'owmparser': missing geodata." % MODULE_NAME
 			if self.callback:
 				self.callback(None, self.error)
 			return
@@ -413,34 +411,6 @@ class Weatherinfo:
 				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		if self.info and self.error is None:
 			return self.getreducedinfo() if self.reduced else self.info
-
-	def getCitybyID(self, cityID=None):  # owm's cityID is DEPRECATED
-		self.error = None
-		if self.mode != "owm":
-			self.error = "[%s] ERROR in module 'getCitybyID': unsupported mode '%s', only mode 'owm' is supported" % (MODULE_NAME, self.mode)
-			return
-		if not cityID:
-			self.error = "[%s] ERROR in module 'getCitybyID': missing cityID" % MODULE_NAME
-			return
-		link = "http://api.openweathermap.org/data/2.5/forecast?id=%s&cnt=1&appid=%s" % (cityID, self.apikey)
-		if self.callback:
-			print("[%s] accessing OWM for cityID..." % MODULE_NAME)
-		cityname = "N/A"
-		jsonData = self.apiserver(link)
-		if jsonData:
-			if self.callback:
-				print("[%s] accessing OWM successful." % MODULE_NAME)
-			try:
-				citydata = jsonData.get("city", {})
-				cityname = citydata.get("name", "N/A")
-				lon = citydata.get("coord", {}).get("lon", "N/A")
-				lat = citydata.get("coord", {}).get("lat", "N/A")
-				return (cityname, lon, lat)
-			except Exception as err:
-				self.error = "[%s] ERROR in module 'getCitybyID': general error. %s" % (MODULE_NAME, str(err))
-				return
-		else:
-			self.error = "[%s] ERROR in module 'getCitybyID': no city '%s' found on the server. Try another wording." % (MODULE_NAME, cityname)
 
 	def getreducedinfo(self):
 		self.error = None
@@ -824,15 +794,14 @@ def main(argv):
 	reduced = False
 	specialopt = None
 	control = False
-	cityID = None
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.1: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.2: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
-		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "scheme =", "units =", "id =", "control ="])
+		opts, args = getopt(argv, "hqm:a:j:r:x:s:u:i:c", ["quiet =", "mode=", "apikey=", "json =", "reduced =", "scheme =", "units =", "control ="])
 	except GetoptError:
 		print(helpstring)
 		exit(2)
@@ -847,7 +816,6 @@ def main(argv):
 			"-r, --reduced <filename>\tFile output formatted in JSON (minimum infos only)\n"
 			"-s, --scheme <data>\t\tCountry scheme (not used by 'omw') {'de-de' is default}\n"
 			"-u, --units <data>\t\tValid units: 'imperial' or 'metric' {'metric' is default}\n"
-			"-i, --id <cityID>\t\tGet cityname by owm's DEPRECATED cityID ('owm' only)\n"
 			"-c, --control\t\t\tShow iconcode-plaintexts and conversion rules\n"
 			"-q, --quiet\t\t\tPerform without text output and select first found city")
 			exit()
@@ -871,9 +839,6 @@ def main(argv):
 				exit()
 		elif opt in ("-a", "--apikey"):
 			apikey = arg
-		elif opt in ("-i", "--id"):
-			cityID = arg
-			specialopt = True
 		elif opt in ("-c", "control"):
 			control = True
 			specialopt = True
@@ -925,10 +890,8 @@ def main(argv):
 	if not specialopt:
 		if geodata:
 			info = WI.start(geodata=geodata, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
-		elif cityID:
-			info = WI.start(cityID=cityID, units=units, scheme=scheme)  # INTERACTIVE CALL (unthreaded)
 		else:
-			print("ERROR: missing cityname or geodata or cityid.")
+			print("ERROR: missing cityname or geodata.")
 			exit()
 	if WI.error:
 		print(WI.error.replace(mainfmt, "").strip())
