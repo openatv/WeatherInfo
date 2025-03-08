@@ -198,7 +198,7 @@ class Weatherinfo:
 			return
 		return result
 
-	def getCitylist(self, cityname=None, scheme="de-de"):
+	def getCitylist(self, cityname=None, scheme="de-de", count=10):
 		self.error = None
 		if not cityname:
 			self.error = "[%s] ERROR in module 'getCitylist': missing cityname." % MODULE_NAME
@@ -208,7 +208,7 @@ class Weatherinfo:
 			cityname, country = self.separateCityCountry(cityname)
 			jsonData = None
 			for city in [cityname, cityname.split(" ")[0]]:
-				link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=10&name=%s%s" % (scheme[:2], city, "" if country is None else ",%s" % country)
+				link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=%s&name=%s%s" % (scheme[:2], count, city, "" if country is None else ",%s" % country)
 				jsonData = self.apiserver(link)
 				if jsonData is not None and "latitude" in jsonData.get("results", [""])[0]:
 					break
@@ -239,7 +239,7 @@ class Weatherinfo:
 			cityname, country = self.separateCityCountry(cityname)
 			jsonData = None
 			for city in [cityname, cityname.split(" ")[0]]:
-				link = "http://api.openweathermap.org/geo/1.0/direct?q=%s%s&lang=%s&limit=15&appid=%s" % (city, "" if country is None else ",%s" % country, scheme[:2], self.apikey)
+				link = "http://api.openweathermap.org/geo/1.0/direct?q=%s%s&lang=%s&limit=%s&appid=%s" % (city, "" if country is None else ",%s" % country, scheme[:2], count, self.apikey)
 				jsonData = self.apiserver(link)
 				if jsonData:
 					break
@@ -797,7 +797,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.2: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.3: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
