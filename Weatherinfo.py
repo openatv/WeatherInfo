@@ -873,7 +873,7 @@ def main(argv):
 	WI = Weatherinfo(mode, apikey)
 	if control:
 		for src in SOURCES + DESTINATIONS:
-			if WI.showDescription(src):
+			if WI.showDescription(src) and WI.error:
 				print(WI.error.replace(mainfmt, "").strip())
 		for src in SOURCES:
 			for dest in DESTINATIONS:
