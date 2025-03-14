@@ -208,8 +208,8 @@ class Weatherinfo:
 			cityname, country = self.separateCityCountry(cityname)
 			jsonData = None
 			for city in [cityname, cityname.split(" ")[0]]:
-				link = "https://geocoding-api.open-meteo.com/v1/search?language=%s&count=%s&name=%s%s" % (scheme[:2], count, city, "" if country is None else ",%s" % country)
-				jsonData = self.apiserver(link)
+				params = [("language", f"{scheme[:2]}"), ("count", f"{count}"), ("name", f"{city}{'' if country is None else ',%s' % country}")]
+				jsonData = self.apiserver("https://geocoding-api.open-meteo.com/v1/search", params)
 				if jsonData is not None and "latitude" in jsonData.get("results", [""])[0]:
 					break
 			if jsonData is None or "results" not in jsonData:
@@ -305,7 +305,7 @@ class Weatherinfo:
 		self.error = None
 		self.callback = None
 
-	def apiserver(self, link):
+	def apiserver(self, link, params=None):
 		agents = [
 				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
 				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_4_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/604.1",
@@ -318,7 +318,7 @@ class Weatherinfo:
 		self.error = None
 		if link:
 			try:
-				response = get(link, headers=headers, timeout=(3.05, 6))
+				response = get(link, headers=headers, params=params, timeout=(3.05, 6))
 				response.raise_for_status()
 			except exceptions.RequestException as err:
 				self.error = "[%s] ERROR in module 'apiserver': '%s" % (MODULE_NAME, str(err))
@@ -338,8 +338,7 @@ class Weatherinfo:
 		self.info = None
 		if self.geodata:
 			tempunit = "F" if self.units == "imperial" else "C"
-			linkcode = "68747470733A2F2F6170692E6D736E2E636F6D2F7765617468657266616C636F6E2F776561746865722F6F766572766965773F266C6F6E3D2573266C61743D2573266C6F63616C653D257326756E6974733D25732661707049643D39653231333830632D666631392D346337382D623465612D313935353865393361356433266170694B65793D6A356934674471484C366E47597778357769356B5268586A74663263357167465839667A666B30544F6F266F6369643D73757065726170702D6D696E692D7765617468657226777261704F446174613D66616C736526696E636C7564656E6F7763617374696E673D7472756526666561747572653D6C696665646179266C696665446179733D363"
-			link = bytes.fromhex(linkcode[:-1]).decode('utf-8') % (float(self.geodata[1]), float(self.geodata[2]), self.scheme, tempunit)
+			link = "68747470733A2F2F6170692E6D736E2E636F6D2F7765617468657266616C636F6E2F776561746865722F6F766572766965773F266C6F6E3D2573266C61743D2573266C6F63616C653D257326756E6974733D25732661707049643D39653231333830632D666631392D346337382D623465612D313935353865393361356433266170694B65793D6A356934674471484C366E47597778357769356B5268586A74663263357167465839667A666B30544F6F266F6369643D73757065726170702D6D696E692D7765617468657226777261704F446174613D66616C736526696E636C7564656E6F7763617374696E673D7472756526666561747572653D6C696665646179266C696665446179733D363"
 		else:
 			self.error = "[%s] ERROR in module 'msnparser': missing geodata." % MODULE_NAME
 			if self.callback:
@@ -347,7 +346,7 @@ class Weatherinfo:
 			return
 		if self.callback:
 			print("[%s] accessing MSN for weatherdata..." % MODULE_NAME)
-		self.info = self.apiserver(link)
+		self.info = self.apiserver(bytes.fromhex(link[:-1]).decode('utf-8') % (float(self.geodata[1]), float(self.geodata[2]), self.scheme, tempunit))
 		if self.callback:
 			if self.error:
 				self.callback(None, self.error)
@@ -367,7 +366,14 @@ class Weatherinfo:
 		  			"+04": "Asia/Bangkok", "+05": "Asia/Singapore", "+06": "Asia/Tokyo", "+07": "Australia/Sydney", "+08": "Pacific/Auckland"}
 		currzone = timezones.get(strftime("%z", gmtime())[:3], "Europe/Berlin")
 		if self.geodata:
-			link = "https://api.open-meteo.com/v1/forecast?longitude=%s&latitude=%s&hourly=temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,winddirection_10m,precipitation_probability&daily=sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min&timezone=%s&windspeed_unit=%s&temperature_unit=%s" % (float(self.geodata[1]), float(self.geodata[2]), currzone, windunit, tempunit)
+			params = [("longitude", f"{float(self.geodata[1])}"),
+			 		("latitude", f"{float(self.geodata[2])}"),
+					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility"),
+					("daily", "sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min"),
+					("timezone", f"{currzone}"),
+					("windspeed_unit", f"{windunit}"),
+					("temperature_unit", f"{tempunit}")
+					]
 		else:
 			self.error = "[%s] ERROR in module 'omwparser': missing geodata." % MODULE_NAME
 			if self.callback:
@@ -375,7 +381,7 @@ class Weatherinfo:
 			return
 		if self.callback:
 			print("[%s] accessing OMW for weatherdata..." % MODULE_NAME)
-		self.info = self.apiserver(link)
+		self.info = self.apiserver("https://api.open-meteo.com/v1/forecast", params)
 		if self.callback:
 			if self.error:
 				self.callback(None, self.error)
@@ -434,6 +440,8 @@ class Weatherinfo:
 						reduced["tempunit"] = tempunit
 						reduced["windunit"] = self.info["units"]["speed"]
 						reduced["precunit"] = "%"
+						reduced["uvindexunit"] = ""
+						reduced["visibiliyunit"] = self.info["units"]["distance"]
 						reduced["current"] = dict()
 						reduced["current"]["observationPoint"] = source["location"]["Name"]
 						currdate = current["created"]
@@ -456,6 +464,9 @@ class Weatherinfo:
 						windDir = current["windDir"]
 						reduced["current"]["windDir"] = str(windDir)
 						reduced["current"]["windDirSign"] = self.directionsign(windDir)
+						reduced["current"]["windGust"] = "%.0f" % current["windGust"]
+						reduced["current"]["uvIndex"] = "%.0f" % current["uv"]
+						reduced["current"]["visibility"] = "%.0f" % current["vis"]
 						reduced["current"]["minTemp"] = "%.0f" % forecast[0]["daily"]["tempLo"]
 						reduced["current"]["maxTemp"] = "%.0f" % forecast[0]["daily"]["tempHi"]
 						reduced["current"]["precipitation"] = "%.0f" % forecast[0]["daily"]["day"]["precip"]
@@ -506,6 +517,8 @@ class Weatherinfo:
 						reduced["tempunit"] = self.info["hourly_units"]["temperature_2m"]
 						reduced["windunit"] = self.info["hourly_units"]["windspeed_10m"]
 						reduced["precunit"] = self.info["hourly_units"]["precipitation_probability"]
+						reduced["uvindexunit"] = self.info["hourly_units"]["uv_index"]
+						reduced["visibiliyunit"] = "km"
 						isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[: 14], "00")
 						reduced["current"] = dict()
 						for idx, time in enumerate(current["time"]):  # collect current
@@ -532,6 +545,9 @@ class Weatherinfo:
 								windDir = current["winddirection_10m"][idx]
 								reduced["current"]["windDir"] = str(windDir)
 								reduced["current"]["windDirSign"] = self.directionsign(windDir)
+								reduced["current"]["windGust"] = "%.0f" % current["wind_gusts_10m"][idx]
+								reduced["current"]["uvIndex"] = "%.0f" % current["uv_index"][idx]
+								reduced["current"]["visibility"] = "%.0f" % round(current["visibility"][idx] / 1000)
 								currdate = datetime.fromisoformat(time)
 								reduced["current"]["dayText"] = currdate.strftime(daytextfmt)
 								reduced["current"]["day"] = currdate.strftime("%A")
@@ -797,7 +813,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.3: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.4: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
