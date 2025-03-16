@@ -17,7 +17,6 @@ from datetime import datetime, timedelta, timezone
 from requests import get, exceptions
 from getopt import getopt, GetoptError
 from random import choice
-from time import gmtime, strftime
 from twisted.internet.reactor import callInThread
 
 MODULE_NAME = __name__.split(".")[-1]
@@ -299,7 +298,7 @@ class Weatherinfo:
 				return
 			elif self.parser:
 				info = self.parser()
-				return None if self.error else info
+				return info
 
 	def stop(self):
 		self.error = None
@@ -359,20 +358,14 @@ class Weatherinfo:
 	def omwparser(self):
 		self.error = None
 		self.info = None
-		windunit = "mph" if self.units == "imperial" else "kmh"
-		tempunit = "fahrenheit" if self.units == "imperial" else "celsius"
-		timezones = {"-06": "America/Anchorage", "-05": "America/Los_Angeles", "-04": "America/Denver", "-03": "America/Chicago", "-02": "America/New_York",
-	  				"-01": "America/Sao_Paulo", "+00": "Europe/London", "+01": "Europe/Berlin", "+02": "Europe/Moscow", "+03": "Africa/Cairo",
-		  			"+04": "Asia/Bangkok", "+05": "Asia/Singapore", "+06": "Asia/Tokyo", "+07": "Australia/Sydney", "+08": "Pacific/Auckland"}
-		currzone = timezones.get(strftime("%z", gmtime())[:3], "Europe/Berlin")
 		if self.geodata:
-			params = [("longitude", f"{float(self.geodata[1])}"),
-			 		("latitude", f"{float(self.geodata[2])}"),
-					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility"),
+			params = [("timezone", "auto"),
+			 		("latitude", f"{round(float(self.geodata[2]), 4)}"),
+					("longitude", f"{round(float(self.geodata[1]), 4)}"),
 					("daily", "sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min"),
-					("timezone", f"{currzone}"),
-					("windspeed_unit", f"{windunit}"),
-					("temperature_unit", f"{tempunit}")
+					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility"),
+					("windspeed_unit", "mph" if self.units == "imperial" else "kmh"),
+					("temperature_unit", "fahrenheit" if self.units == "imperial" else "celsius")
 					]
 		else:
 			self.error = "[%s] ERROR in module 'omwparser': missing geodata." % MODULE_NAME
@@ -444,13 +437,13 @@ class Weatherinfo:
 						reduced["visibiliyunit"] = self.info["units"]["distance"]
 						reduced["current"] = dict()
 						reduced["current"]["observationPoint"] = source["location"]["Name"]
-						currdate = current["created"]
-						reduced["current"]["observationTime"] = currdate
-						reduced["current"]["sunrise"] = forecast[0]["almanac"]["sunrise"]
-						reduced["current"]["sunset"] = forecast[0]["almanac"]["sunset"]
-						now = datetime.now().astimezone()
-						sunrise = datetime.fromisoformat(forecast[0]["almanac"]["sunrise"])
-						sunset = datetime.fromisoformat(forecast[0]["almanac"]["sunset"])
+						currdate = datetime.fromisoformat(current["created"]).replace(tzinfo=None)
+						reduced["current"]["observationTime"] = currdate.isoformat()
+						sunrise = datetime.fromisoformat(forecast[0]["almanac"]["sunrise"]).replace(tzinfo=None)
+						reduced["current"]["sunrise"] = sunrise.isoformat()
+						sunset = datetime.fromisoformat(forecast[0]["almanac"]["sunset"]).replace(tzinfo=None)
+						reduced["current"]["sunset"] = sunset.isoformat()
+						now = datetime.now()
 						reduced["current"]["isNight"] = now < sunrise or now > sunset
 						pvdrCode = forecast[0]["hourly"][0]["symbol"] if forecast[0]["hourly"] else current["symbol"]
 						reduced["current"]["ProviderCode"] = pvdrCode
@@ -470,7 +463,6 @@ class Weatherinfo:
 						reduced["current"]["minTemp"] = "%.0f" % forecast[0]["daily"]["tempLo"]
 						reduced["current"]["maxTemp"] = "%.0f" % forecast[0]["daily"]["tempHi"]
 						reduced["current"]["precipitation"] = "%.0f" % forecast[0]["daily"]["day"]["precip"]
-						currdate = datetime.fromisoformat(currdate)
 						reduced["current"]["dayText"] = currdate.strftime(daytextfmt)
 						reduced["current"]["day"] = currdate.strftime("%A")
 						reduced["current"]["shortDay"] = currdate.strftime("%a")
@@ -519,18 +511,17 @@ class Weatherinfo:
 						reduced["precunit"] = self.info["hourly_units"]["precipitation_probability"]
 						reduced["uvindexunit"] = self.info["hourly_units"]["uv_index"]
 						reduced["visibiliyunit"] = "km"
-						isotime = "%s%s" % (datetime.now(timezone.utc).astimezone().isoformat()[: 14], "00")
+						isotime = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0).isoformat()[:16]
 						reduced["current"] = dict()
 						for idx, time in enumerate(current["time"]):  # collect current
 							if isotime in time:
-								isotime = datetime.now(timezone.utc).astimezone().isoformat()
 								reduced["current"]["observationPoint"] = self.geodata[0]
-								reduced["current"]["observationTime"] = "%s%s" % (isotime[: 19], isotime[26:])
-								reduced["current"]["sunrise"] = datetime.fromisoformat(forecast["sunrise"][0]).astimezone().isoformat()
-								reduced["current"]["sunset"] = datetime.fromisoformat(forecast["sunset"][0]).astimezone().isoformat()
-								now = datetime.now()
+								reduced["current"]["observationTime"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 								sunrise = datetime.fromisoformat(forecast["sunrise"][0])
+								reduced["current"]["sunrise"] = sunrise.isoformat()
 								sunset = datetime.fromisoformat(forecast["sunset"][0])
+								reduced["current"]["sunset"] = sunset.isoformat()
+								now = datetime.now()
 								reduced["current"]["isNight"] = now < sunrise or now > sunset
 								pvdrCode = current["weathercode"][idx]
 								reduced["current"]["ProviderCode"] = str(pvdrCode)
@@ -594,13 +585,13 @@ class Weatherinfo:
 						reduced["precunit"] = "%"
 						reduced["current"] = dict()
 						now = datetime.now()
-						isotime = datetime.now(timezone.utc).astimezone().isoformat()
+						isotime = datetime.now(timezone.utc).isoformat()
 						reduced["current"]["observationPoint"] = self.geodata[0]
 						reduced["current"]["observationTime"] = "%s%s" % (isotime[: 19], isotime[26:])
-						reduced["current"]["sunrise"] = datetime.fromtimestamp(self.info["city"]["sunrise"]).astimezone().isoformat()
-						reduced["current"]["sunset"] = datetime.fromtimestamp(self.info["city"]["sunset"]).astimezone().isoformat()
 						sunrise = datetime.fromtimestamp(self.info["city"]["sunrise"])
 						sunset = datetime.fromtimestamp(self.info["city"]["sunset"])
+						reduced["current"]["sunrise"] = sunrise.isoformat()
+						reduced["current"]["sunset"] = sunset.isoformat()
 						reduced["current"]["isNight"] = now < sunrise or now > sunset
 						pvdrCode = current["weather"][0]["id"]
 						reduced["current"]["ProviderCode"] = str(pvdrCode)
@@ -813,7 +804,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.4: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.5: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
