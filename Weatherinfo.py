@@ -69,7 +69,7 @@ class Weatherinfo:
 						 "701": ("20", "M"), "711": ("22", "J"), "721": ("21", "E"), "731": ("19", "J"), "741": ("20", "E"),
 						 "751": ("19", "J"), "761": ("19", "J"), "762": ("22", "J"), "771": ("23", "F"), "781": ("0", "F"),
 						 "800": ("32", "B"), "801": ("34", "B"), "802": ("30", "H"), "803": ("26", "H"), "804": ("28", "N")
-						 }  # mapping: owm -> (yahoo, meteo)
+						 }  # mapping: owm -> (yahoo, meteo), OpenWeatherMap is DEPRECATED
 		self.msnDescs = {
 						 "d000": "SunnyDayV3", "d100": "MostlySunnyDay", "d200": "D200PartlySunnyV2", "d210": "D210LightRainShowersV2",
 						 "d211": "D211LightRainSowShowersV2", "d212": "D212LightSnowShowersV2", "d220": "LightRainShowerDay",
@@ -114,7 +114,7 @@ class Weatherinfo:
 						 "622": "Heavy shower snow", "701": "mist", "711": "Smoke", "721": "Haze", "731": "sand/ dust whirls", "741": "fog", "751": "sand",
 						 "761": "dust", "762": "volcanic ash", "771": "squalls", "781": "tornado", "800": "clear sky", "801": "few clouds: 11-25%",
 						 "802": "scattered clouds: 25-50%", "803": "broken clouds: 51-84%", "804": "overcast clouds: 85-100%"
-						 }  # cleartext description of owm-weathercodes
+						 }  # cleartext description of owm-weathercodes, OpenWeatherMap is DEPRECATED
 		self.yahooDescs = {
 						 "0": "tornado", "1": "tropical storm", "2": "hurricane", "3": "severe thunderstorms", "4": "thunderstorms", "5": "mixed rain and snow",
 						 "6": "mixed rain and sleet", "7": "mixed snow and sleet", "8": "freezing drizzle", "9": "drizzle", "10": "freezing rain",
@@ -134,6 +134,15 @@ class Weatherinfo:
 						 "K": "fog_moon", "L": "fog_cloud", "M": "fog", "N": "cloud", "O": "cloud_flash", "P": "cloud_flash_alt", "Q": "drizzle", "R": "rain",
 						 "S": "windy", "T": "windy_rain", "U": "snow", "V": "snow_alt", "W": "snow_heavy", "X": "hail", "Y": "clouds", "Z": "clouds_flash"
 						 }  # cleartext description of modified meteo-iconcodes
+		agents = [
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
+				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_4_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/604.1",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0",
+				"Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75",
+				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.18363"
+				]
+		self.headers = {"User-Agent": choice(agents), 'Accept': 'application/json'}
 		self.error = None
 		self.info = None
 		self.mode = None
@@ -305,19 +314,10 @@ class Weatherinfo:
 		self.callback = None
 
 	def apiserver(self, link, params=None):
-		agents = [
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36",
-				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_4_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0.3 Mobile/15E148 Safari/604.1",
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/110.0",
-				"Mozilla/4.0 (compatible; MSIE 9.0; Windows NT 6.1)",
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36 Edg/87.0.664.75",
-				"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.102 Safari/537.36 Edge/18.18363"
-				]
-		headers = {"User-Agent": choice(agents), 'Accept': 'application/json'}
 		self.error = None
 		if link:
 			try:
-				response = get(link, headers=headers, params=params, timeout=(3.05, 6))
+				response = get(link, headers=self.headers, params=params, timeout=(3.05, 6))
 				response.raise_for_status()
 			except exceptions.RequestException as err:
 				self.error = "[%s] ERROR in module 'apiserver': '%s" % (MODULE_NAME, str(err))
@@ -362,7 +362,7 @@ class Weatherinfo:
 			params = [("timezone", "auto"),
 			 		("latitude", f"{round(float(self.geodata[2]), 4)}"),
 					("longitude", f"{round(float(self.geodata[1]), 4)}"),
-					("daily", "sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min"),
+					("daily", "sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max,apparent_temperature_max,apparent_temperature_min"),
 					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility"),
 					("windspeed_unit", "mph" if self.units == "imperial" else "kmh"),
 					("temperature_unit", "fahrenheit" if self.units == "imperial" else "celsius")
@@ -414,6 +414,7 @@ class Weatherinfo:
 	def getreducedinfo(self):
 		self.error = None
 		namefmt = "%s, %s"
+		fullfmt = "%s, %s, %s"
 		daytextfmt = "%a, %d."
 		datefmt = "%Y-%m-%d"
 		reduced = dict()
@@ -425,8 +426,8 @@ class Weatherinfo:
 						current = self.info["responses"][0]["weather"][0]["current"]
 						forecast = self.info["responses"][0]["weather"][0]["forecast"]["days"]
 						reduced["source"] = "MSN Weather"
-						location = self.geodata[0].split(",")
-						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
+						location = self.geodata[0].split(", ")
+						reduced["name"] = location[0].split(", ")[0]
 						reduced["longitude"] = str(source["coordinates"]["lon"])
 						reduced["latitude"] = str(source["coordinates"]["lat"])
 						tempunit = self.info["units"]["temperature"].strip("\u200e")
@@ -436,7 +437,7 @@ class Weatherinfo:
 						reduced["uvindexunit"] = ""
 						reduced["visibiliyunit"] = self.info["units"]["distance"]
 						reduced["current"] = dict()
-						reduced["current"]["observationPoint"] = source["location"]["Name"]
+						reduced["current"]["observationPoint"] = self.createFullname(location)
 						currdate = datetime.fromisoformat(current["created"]).replace(tzinfo=None)
 						reduced["current"]["observationTime"] = currdate.isoformat()
 						sunrise = datetime.fromisoformat(forecast[0]["almanac"]["sunrise"]).replace(tzinfo=None)
@@ -457,7 +458,7 @@ class Weatherinfo:
 						windDir = current["windDir"]
 						reduced["current"]["windDir"] = str(windDir)
 						reduced["current"]["windDirSign"] = self.directionsign(windDir)
-						reduced["current"]["windGust"] = "%.0f" % current["windGust"]
+						reduced["current"]["windGusts"] = "%.0f" % current["windGust"]
 						reduced["current"]["uvIndex"] = "%.0f" % current["uv"]
 						reduced["current"]["visibility"] = "%.0f" % current["vis"]
 						reduced["current"]["minTemp"] = "%.0f" % forecast[0]["daily"]["tempLo"]
@@ -470,7 +471,7 @@ class Weatherinfo:
 						reduced["current"]["text"] = forecast[0]["hourly"][0]["pvdrCap"] if forecast[0]["hourly"] else current["capAbbr"]
 						reduced["current"]["raintext"] = self.info["responses"][0]["weather"][0]["nowcasting"]["summary"]
 						reduced["forecast"] = dict()
-						for idx in range(6):  # collect forecast of today and next 5 days
+						for idx in range(7):  # collect forecast of today and next 6 days
 							reduced["forecast"][idx] = dict()
 							pvdrCode = forecast[idx]["daily"]["symbol"]
 							reduced["forecast"][idx]["ProviderCode"] = pvdrCode
@@ -479,6 +480,15 @@ class Weatherinfo:
 							reduced["forecast"][idx]["meteoCode"] = iconCodes.get("meteoCode", ")") if iconCodes else ")"
 							reduced["forecast"][idx]["minTemp"] = "%.0f" % forecast[idx]["daily"]["tempLo"]
 							reduced["forecast"][idx]["maxTemp"] = "%.0f" % forecast[idx]["daily"]["tempHi"]
+							reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % forecast[idx]["daily"]["feelsHi"]
+							reduced["forecast"][idx]["minFeelsLike"] = "%.0f" % forecast[idx]["daily"]["feelsLo"]
+							reduced["forecast"][idx]["maxWindSpeed"] = "%.0f" % forecast[idx]["daily"]["windMax"]
+							windDir = forecast[idx]["daily"]["windMaxDir"]
+							reduced["forecast"][idx]["domWindDir"] = "%.0f" % windDir
+							reduced["forecast"][idx]["domWindDirSign"] = self.directionsign(windDir)
+							reduced["forecast"][idx]["maxWindGusts"] = "%.0f" % forecast[idx]["daily"]["windTh"]
+							reduced["forecast"][idx]["maxUvIndex"] = "%.0f" % forecast[idx]["daily"]["uv"]
+							reduced["forecast"][idx]["maxVisibility"] = "%.0f" % forecast[idx]["daily"]["vis"]
 							reduced["forecast"][idx]["precipitation"] = "%.0f" % forecast[idx]["daily"]["day"]["precip"]
 							reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
 							reduced["forecast"][idx]["day"] = currdate.strftime("%A")
@@ -502,8 +512,8 @@ class Weatherinfo:
 						current = self.info["hourly"]
 						forecast = self.info["daily"]
 						reduced["source"] = "Open-Meteo Weather"
-						location = self.geodata[0].split(",")
-						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
+						location = self.geodata[0].split(", ")
+						reduced["name"] = location[0].split(", ")[0]
 						reduced["longitude"] = str(self.info["longitude"])
 						reduced["latitude"] = str(self.info["latitude"])
 						reduced["tempunit"] = self.info["hourly_units"]["temperature_2m"]
@@ -515,7 +525,7 @@ class Weatherinfo:
 						reduced["current"] = dict()
 						for idx, time in enumerate(current["time"]):  # collect current
 							if isotime in time:
-								reduced["current"]["observationPoint"] = self.geodata[0]
+								reduced["current"]["observationPoint"] = self.createFullname(location)
 								reduced["current"]["observationTime"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 								sunrise = datetime.fromisoformat(forecast["sunrise"][0])
 								reduced["current"]["sunrise"] = sunrise.isoformat()
@@ -536,7 +546,7 @@ class Weatherinfo:
 								windDir = current["winddirection_10m"][idx]
 								reduced["current"]["windDir"] = str(windDir)
 								reduced["current"]["windDirSign"] = self.directionsign(windDir)
-								reduced["current"]["windGust"] = "%.0f" % current["wind_gusts_10m"][idx]
+								reduced["current"]["windGusts"] = "%.0f" % current["wind_gusts_10m"][idx]
 								reduced["current"]["uvIndex"] = "%.0f" % current["uv_index"][idx]
 								reduced["current"]["visibility"] = "%.0f" % round(current["visibility"][idx] / 1000)
 								currdate = datetime.fromisoformat(time)
@@ -549,7 +559,7 @@ class Weatherinfo:
 								reduced["current"]["precipitation"] = "%.0f" % current["precipitation_probability"][idx]
 								break
 						reduced["forecast"] = dict()
-						for idx in range(6):  # collect forecast of today and next 5 days
+						for idx in range(7):  # collect forecast of today and next 6 days
 							reduced["forecast"][idx] = dict()
 							pvdrCode = forecast["weathercode"][idx]
 							reduced["forecast"][idx]["ProviderCode"] = str(pvdrCode)
@@ -559,6 +569,15 @@ class Weatherinfo:
 								reduced["forecast"][idx]["meteoCode"] = iconCode.get("meteoCode", ")")
 							reduced["forecast"][idx]["minTemp"] = "%.0f" % forecast["temperature_2m_min"][idx]
 							reduced["forecast"][idx]["maxTemp"] = "%.0f" % forecast["temperature_2m_max"][idx]
+							reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % forecast["apparent_temperature_max"][idx]
+							reduced["forecast"][idx]["minFeelsLike"] = "%.0f" % forecast["apparent_temperature_min"][idx]
+							reduced["forecast"][idx]["maxWindSpeed"] = "%.0f" % forecast["wind_speed_10m_max"][idx]
+							windDir = forecast["wind_direction_10m_dominant"][idx]
+							reduced["forecast"][idx]["domWindDir"] = "%.0f" % windDir
+							reduced["forecast"][idx]["domWindDirSign"] = self.directionsign(windDir)
+							reduced["forecast"][idx]["maxWindGusts"] = "%.0f" % forecast["wind_gusts_10m_max"][idx]
+							reduced["forecast"][idx]["maxUvIndex"] = "%.0f" % forecast["uv_index_max"][idx]
+							reduced["forecast"][idx]["maxVisibility"] = "%.0f" % round(max(current.get("visibility", [] + [0])) / 1000)
 							reduced["forecast"][idx]["precipitation"] = "%.0f" % forecast["precipitation_probability_max"][idx]
 							currdate = datetime.fromisoformat(forecast["time"][idx])
 							reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
@@ -571,13 +590,13 @@ class Weatherinfo:
 				else:
 					self.error = "[%s] ERROR in module 'getreducedinfo#omw': missing geodata." % MODULE_NAME
 
-			elif self.parser is not None and self.mode == "owm":
+			elif self.parser is not None and self.mode == "owm":   #  OpenWeatherMap is DEPRECATED
 				if self.geodata:
 					try:
 						current = self.info["list"][0]  # collect current weather data
 						reduced["source"] = "OpenWeatherMap"
-						location = self.geodata[0].split(",")
-						reduced["name"] = namefmt % (location[0].strip(), location[1].strip()) if len(location) > 1 else location[0].strip()
+						location = self.geodata[0].split(", ")
+						reduced["name"] = location[0].split(", ")[0]
 						reduced["longitude"] = str(self.info["city"]["coord"]["lon"])
 						reduced["latitude"] = str(self.info["city"]["coord"]["lat"])
 						reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
@@ -586,7 +605,7 @@ class Weatherinfo:
 						reduced["current"] = dict()
 						now = datetime.now()
 						isotime = datetime.now(timezone.utc).isoformat()
-						reduced["current"]["observationPoint"] = self.geodata[0]
+						reduced["current"]["observationPoint"] = self.createFullname(location)
 						reduced["current"]["observationTime"] = "%s%s" % (isotime[: 19], isotime[26:])
 						sunrise = datetime.fromtimestamp(self.info["city"]["sunrise"])
 						sunset = datetime.fromtimestamp(self.info["city"]["sunset"])
@@ -788,6 +807,13 @@ class Weatherinfo:
 			self.error = "[%s] ERROR in module 'showConvertrules': convert source '%s' is unknown. Valid is: %s" % (MODULE_NAME, src, SOURCES)
 			return self.error
 
+	def createFullname(self, location):
+			components = list(dict.fromkeys(location))  # remove duplicates from list
+			len_components = len(components)
+			if len_components > 2:
+				return (f"{components[0]}, {components[1]}, {components[-1]}")
+			return (f"{components[0]}, {components[1]}") if len_components == 2 else (f"{components[0]}")
+
 
 def main(argv):
 	mainfmt = "[__main__]"
@@ -884,8 +910,8 @@ def main(argv):
 		if citylist and len(citylist) > 1 and not quiet:
 			print("Found the following cities/areas:")
 			for idx, item in enumerate(citylist):
-				lon = " [lon=%s" % item[1] if item[1] != 0.0 else ""
-				lat = ", lat=%s]" % item[2] if item[2] != 0.0 else ""
+				lon = " [lon=%s" % item[1] if item[1] != 0 else ""
+				lat = ", lat=%s]" % item[2] if item[2] != 0 else ""
 				print("%s = %s%s%s" % (idx + 1, item[0], lon, lat))
 			choice = input("Select (1-%s)? : " % len(citylist))[: 1]
 			index = ord(choice) - 48 if len(choice) > 0 else -1
