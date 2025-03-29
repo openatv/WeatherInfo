@@ -315,22 +315,17 @@ class Weatherinfo:
 
 	def apiserver(self, link, params=None):
 		self.error = None
+		jsonData = {}
 		if link:
 			try:
 				response = get(link, headers=self.headers, params=params, timeout=(3.05, 6))
 				response.raise_for_status()
+				jsonData = loads(response.content)
 			except exceptions.RequestException as err:
 				self.error = "[%s] ERROR in module 'apiserver': '%s" % (MODULE_NAME, str(err))
-				return
-			try:
-				jsonData = loads(response.content)
-				if jsonData:
-					return jsonData
-				self.error = "[%s] ERROR in module 'apiserver': server access failed." % MODULE_NAME
-			except Exception as err:
-				self.error = "[%s] ERROR in module 'apiserver': invalid json data from server. %s" % (MODULE_NAME, str(err))
 		else:
 			self.error = "[%s] ERROR in module 'apiserver': missing link." % MODULE_NAME
+		return jsonData
 
 	def msnparser(self):
 		self.error = None
@@ -364,7 +359,7 @@ class Weatherinfo:
 					("longitude", f"{round(float(self.geodata[1]), 4)}"),
 					("daily", "sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max,apparent_temperature_max,apparent_temperature_min"),
 					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility"),
-					("windspeed_unit", "mph" if self.units == "imperial" else "kmh"),
+					("windspeed_unit", "mph" if self.units == "imperial" else "km/h"),
 					("temperature_unit", "fahrenheit" if self.units == "imperial" else "celsius")
 					]
 		else:
@@ -392,16 +387,21 @@ class Weatherinfo:
 			if self.callback:
 				self.callback(None, self.error)
 			return
-		if self.geodata:
-			link = "https://api.openweathermap.org/data/3.0/onecall?&lon=%s&lat=%s&units=%s&lang=%s&appid=%s" % (self.geodata[1], self.geodata[2], self.units, self.scheme[:2], self.apikey)
-		else:
+		if not self.geodata:
 			self.error = "[%s] ERROR in module 'owmparser': missing geodata." % MODULE_NAME
 			if self.callback:
 				self.callback(None, self.error)
 			return
+		params = [("lat", f"{round(float(self.geodata[2]), 4)}"),
+				("lon", f"{round(float(self.geodata[1]), 4)}"),
+				("lang", self.scheme[:2]),
+				("units", self.units),
+				("appid", self.apikey)
+				]
 		if self.callback:
 			print("[%s] accessing OWM for weatherdata..." % MODULE_NAME)
-		self.info = self.apiserver(link)
+		self.info = self.apiserver("https://api.openweathermap.org/data/2.5/weather", params)  # current only
+		self.info |= self.apiserver("https://api.openweathermap.org/data/2.5/forecast", params)  # forecasts only
 		if self.callback:
 			if self.error:
 				self.callback(None, self.error)
@@ -413,8 +413,6 @@ class Weatherinfo:
 
 	def getreducedinfo(self):
 		self.error = None
-		namefmt = "%s, %s"
-		fullfmt = "%s, %s, %s"
 		daytextfmt = "%a, %d."
 		datefmt = "%Y-%m-%d"
 		reduced = dict()
@@ -520,7 +518,7 @@ class Weatherinfo:
 						reduced["windunit"] = self.info["hourly_units"]["windspeed_10m"]
 						reduced["precunit"] = self.info["hourly_units"]["precipitation_probability"]
 						reduced["uvindexunit"] = self.info["hourly_units"]["uv_index"]
-						reduced["visibiliyunit"] = "km"
+						reduced["visibiliyunit"] = "miles" if self.units == "imperial" else "km"
 						isotime = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0).isoformat()[:16]
 						reduced["current"] = dict()
 						for idx, time in enumerate(current["time"]):  # collect current
@@ -602,6 +600,7 @@ class Weatherinfo:
 						reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
 						reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
 						reduced["precunit"] = "%"
+						reduced["visibiliyunit"] = "miles" if self.units == "imperial" else "km"
 						reduced["current"] = dict()
 						now = datetime.now()
 						isotime = datetime.now(timezone.utc).isoformat()
@@ -625,23 +624,29 @@ class Weatherinfo:
 						windDir = current["wind"]["deg"]
 						reduced["current"]["windDir"] = str(windDir)
 						reduced["current"]["windDirSign"] = self.directionsign(int(windDir))
+						reduced["current"]["windGusts"] = "%.0f" % current["wind"]["gust"]
+						reduced["current"]["visibility"] = "%.0f" % round(current["visibility"] / 1000)
 						currdate = datetime.fromtimestamp(current["dt"])
 						reduced["current"]["dayText"] = currdate.strftime(daytextfmt)
 						reduced["current"]["day"] = currdate.strftime("%A")
 						reduced["current"]["shortDay"] = currdate.strftime("%a")
 						reduced["current"]["date"] = currdate.strftime(datefmt)
 						reduced["current"]["text"] = current["weather"][0]["description"]
-						tmin = 88  # inits for today
-						tmax = -88
-						yahoocode = None
-						meteocode = None
-						text = None
+						# inits for today
+						tmin, tmax, fmin, fmax, wmax, gmax, vmax = 88, -88, 88, -88, -88, -88, -88
+						yahoocode, meteocode, text = None, None, None
+						prec, wdir = [], []
 						idx = 0
-						prec = []
 						reduced["forecast"] = dict()
 						for forecast in self.info["list"]:  # collect forecast of today and next 5 days
 							tmin = min(tmin, forecast["main"]["temp_min"])
 							tmax = max(tmax, forecast["main"]["temp_max"])
+							fmin = min(fmin, forecast["main"]["feels_like"])
+							fmax = max(fmax, forecast["main"]["feels_like"])
+							wmax = max(wmax, forecast["wind"]["speed"])
+							gmax = max(gmax, forecast["wind"]["gust"])
+							vmax = max(vmax, forecast["visibility"] / 1000)
+							wdir.append(forecast["wind"]["deg"])
 							prec.append(forecast["pop"])
 							if "15:00:00" in forecast["dt_txt"]:  # get weather icon as a representative icon for current day
 								pvdrCode = forecast["weather"][0]["id"]
@@ -669,6 +674,14 @@ class Weatherinfo:
 								reduced["forecast"][idx]["meteoCode"] = meteocode
 								reduced["forecast"][idx]["minTemp"] = "%.0f" % tmin
 								reduced["forecast"][idx]["maxTemp"] = "%.0f" % tmax
+								reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % fmin
+								reduced["forecast"][idx]["minFeelsLike"] = "%.0f" % fmax
+								reduced["forecast"][idx]["maxWindSpeed"] = "%.0f" % wmax
+								wdom = round(sum(wdir) / len(wdir)) if wdir else 0
+								reduced["forecast"][idx]["domWindDir"] = "%.0f" % wdom
+								reduced["forecast"][idx]["domWindDirSign"] = self.directionsign(wdom)
+								reduced["forecast"][idx]["maxWindGusts"] = "%.0f" % gmax
+								reduced["forecast"][idx]["maxVisibility"] = "%.0f" % vmax
 								reduced["forecast"][idx]["precipitation"] = "%.0f" % (sum(prec) / len(prec) * 100) if len(prec) > 0 else ""
 								currdate = datetime.fromtimestamp(forecast["dt"])
 								reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
@@ -676,35 +689,30 @@ class Weatherinfo:
 								reduced["forecast"][idx]["shortDay"] = currdate.strftime("%a")
 								reduced["forecast"][idx]["date"] = currdate.strftime(datefmt)
 								reduced["forecast"][idx]["text"] = text
-								tmin = 88  # inits for next day
-								tmax = -88
-								prec = []
-								yahoocode = None
-								meteocode = None
-								text = None
+								# inits for next day
+								tmin, tmax, fmin, fmax, wmax, gmax, vmax = 88, -88, 88, -88, -88, -88, -88
+								yahoocode, meteocode, text = None, None, None
+								prec, wdir = [], []
 								idx += 1
-							if idx == 5 and "21:00:00" in forecast["dt_txt"]:  # in case day #5 is missing: create a copy of day 4 (=fake)
+							if idx == 5 and "21:00:00" in forecast["dt_txt"]:  # in case day #5 is missing: create a copy of day 4 (=fake), in case day #5 is incomplete: use what we have
 								reduced["forecast"][idx] = dict()
+								pvdrCode = forecast["weather"][0]["id"]
+								reduced["forecast"][idx]["ProviderCode"] = str(pvdrCode)
 								reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else reduced["forecast"][idx - 1]["yahooCode"]
 								reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else reduced["forecast"][idx - 1]["meteoCode"]
 								reduced["forecast"][idx]["minTemp"] = "%.0f" % tmin if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
 								reduced["forecast"][idx]["maxTemp"] = "%.0f" % tmax if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
+								reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % fmin if fmin != 88 else reduced["forecast"][idx - 1]["minFeelsLike"]
+								reduced["forecast"][idx]["minFeelsLike"] = "%.0f" % fmax if fmax != - 88 else reduced["forecast"][idx - 1]["maxFeelsLike"]
+								reduced["forecast"][idx]["maxWindSpeed"] = "%.0f" % wmax if wmax != - 88 else reduced["forecast"][idx - 1]["maxWindSpeed"]
+								wdom = round(sum(wdir) / len(wdir)) if wdir else 0
+								reduced["forecast"][idx]["domWindDir"] = "%.0f" % wdom
+								reduced["forecast"][idx]["domWindDirSign"] = self.directionsign(wdom)
+								reduced["forecast"][idx]["maxWindGusts"] = "%.0f" % gmax if gmax != - 88 else reduced["forecast"][idx - 1]["maxWindGusts"]
+								reduced["forecast"][idx]["maxVisibility"] = "%.0f" % vmax if vmax != - 88 else reduced["forecast"][idx - 1]["maxVisibility"]
 								reduced["forecast"][idx]["precipitation"] = "%.0f" % (sum(prec) / len(prec) * 100) if len(prec) > 0 else ""
 								nextdate = datetime.strptime(reduced["forecast"][idx - 1]["date"], datefmt) + timedelta(1)
-								reduced["forecast"][idx]["day"] = nextdate.strftime("%A")
-								reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
-								reduced["forecast"][idx]["date"] = nextdate.strftime(datefmt)
-								reduced["forecast"][idx]["text"] = text if text else reduced["forecast"][idx - 1]["text"]
-							elif idx == 5:  # in case day #5 is incomplete: use what we have
-								reduced["forecast"][idx] = dict()
-								if yahoocode:
-									reduced["forecast"][idx]["yahooCode"] = yahoocode
-								if meteocode:
-									reduced["forecast"][idx]["meteoCode"] = meteocode
-								reduced["forecast"][idx]["minTemp"] = "%.0f" % tmin if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
-								reduced["forecast"][idx]["maxTemp"] = "%.0f" % tmax if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
-								reduced["forecast"][idx]["precipitation"] = "%.0f" % (sum(prec) / len(prec) * 100) if len(prec) > 0 else ""
-								nextdate = datetime.strptime(reduced["forecast"][idx - 1]["date"], datefmt) + timedelta(1)
+								reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
 								reduced["forecast"][idx]["day"] = nextdate.strftime("%A")
 								reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
 								reduced["forecast"][idx]["date"] = nextdate.strftime(datefmt)
@@ -830,7 +838,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.5: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.7: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
