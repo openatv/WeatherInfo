@@ -151,6 +151,7 @@ class Weatherinfo:
 		self.units = None
 		self.callback = None
 		self.reduced = False
+		self.dataReady = False
 		self.setmode(newmode, apikey)
 
 	def setmode(self, newmode="msn", apikey=None):
@@ -330,6 +331,7 @@ class Weatherinfo:
 	def msnparser(self):
 		self.error = None
 		self.info = None
+		self.dataReady = False
 		if self.geodata:
 			tempunit = "F" if self.units == "imperial" else "C"
 			link = "68747470733A2F2F6170692E6D736E2E636F6D2F7765617468657266616C636F6E2F776561746865722F6F766572766965773F266C6F6E3D2573266C61743D2573266C6F63616C653D257326756E6974733D25732661707049643D39653231333830632D666631392D346337382D623465612D313935353865393361356433266170694B65793D6A356934674471484C366E47597778357769356B5268586A74663263357167465839667A666B30544F6F266F6369643D73757065726170702D6D696E692D7765617468657226777261704F446174613D66616C736526696E636C7564656E6F7763617374696E673D7472756526666561747572653D6C696665646179266C696665446179733D363"
@@ -346,13 +348,16 @@ class Weatherinfo:
 				self.callback(None, self.error)
 			else:
 				print("[%s] MSN successfully accessed..." % MODULE_NAME)
+				self.dataReady = True
 				self.callback(self.getreducedinfo() if self.reduced else self.info, None)
 		if self.info and self.error is None:
+			self.dataReady = True
 			return self.getreducedinfo() if self.reduced else self.info
 
 	def omwparser(self):
 		self.error = None
 		self.info = None
+		self.dataReady = False
 		if self.geodata:
 			params = [("timezone", "auto"),
 			 		("latitude", f"{round(float(self.geodata[2]), 4)}"),
@@ -376,13 +381,16 @@ class Weatherinfo:
 				self.callback(None, self.error)
 			else:
 				print("[%s] OMW successfully accessed." % MODULE_NAME)
+				self.dataReady = True
 				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		if self.info and self.error is None:
+			self.dataReady = True
 			return self.getreducedinfo() if self.reduced else self.info
 
 	def owmparser(self):
 		self.error = None
 		self.info = None
+		self.dataReady = False
 		if not self.apikey:
 			self.error = "[%s] ERROR in module' owmparser': API-key is missing!" % MODULE_NAME
 			if self.callback:
@@ -408,8 +416,10 @@ class Weatherinfo:
 				self.callback(None, self.error)
 			else:
 				print("[%s] OWM successfully accessed..." % MODULE_NAME)
+				self.dataReady = True
 				self.callback(self.getreducedinfo() if self.reduced else self.info, self.error)
 		if self.info and self.error is None:
+			self.dataReady = True
 			return self.getreducedinfo() if self.reduced else self.info
 
 	def getreducedinfo(self):
@@ -857,6 +867,9 @@ class Weatherinfo:
 			if len_components > 2:
 				return (f"{components[0]}, {components[1]}, {components[-1]}")
 			return (f"{components[0]}, {components[1]}") if len_components == 2 else (f"{components[0]}")
+
+	def getDataReady(self):
+		return self.dataReady
 
 
 def main(argv):
