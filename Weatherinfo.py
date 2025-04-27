@@ -357,8 +357,9 @@ class Weatherinfo:
 			params = [("timezone", "auto"),
 			 		("latitude", f"{round(float(self.geodata[2]), 4)}"),
 					("longitude", f"{round(float(self.geodata[1]), 4)}"),
+					("current", "pressure_msl"),
+					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility,pressure_msl"),
 					("daily", "sunrise,sunset,weathercode,precipitation_probability_max,temperature_2m_max,temperature_2m_min,wind_speed_10m_max,wind_gusts_10m_max,wind_direction_10m_dominant,uv_index_max,apparent_temperature_max,apparent_temperature_min"),
-					("hourly", "temperature_2m,relativehumidity_2m,apparent_temperature,weathercode,windspeed_10m,wind_gusts_10m,winddirection_10m,precipitation_probability,uv_index,visibility"),
 					("windspeed_unit", "mph" if self.units == "imperial" else "kmh"),
 					("temperature_unit", "fahrenheit" if self.units == "imperial" else "celsius")
 					]
@@ -428,6 +429,7 @@ class Weatherinfo:
 						reduced["name"] = location[0].split(", ")[0]
 						reduced["longitude"] = str(source["coordinates"]["lon"])
 						reduced["latitude"] = str(source["coordinates"]["lat"])
+						reduced["pressunit"] = self.info["units"]["pressure"]
 						tempunit = self.info["units"]["temperature"].strip("\u200e")
 						reduced["tempunit"] = tempunit
 						reduced["windunit"] = self.info["units"]["speed"]
@@ -442,6 +444,10 @@ class Weatherinfo:
 						reduced["current"]["sunrise"] = sunrise.isoformat()
 						sunset = datetime.fromisoformat(forecast[0]["almanac"]["sunset"]).replace(tzinfo=None)
 						reduced["current"]["sunset"] = sunset.isoformat()
+						moonrise = datetime.fromisoformat(forecast[0]["almanac"]["moonrise"]).replace(tzinfo=None)
+						reduced["current"]["moonrise"] = moonrise.isoformat()
+						moonset = datetime.fromisoformat(forecast[0]["almanac"]["moonset"]).replace(tzinfo=None)
+						reduced["current"]["moonset"] = moonset.isoformat()
 						now = datetime.now()
 						reduced["current"]["isNight"] = now < sunrise or now > sunset
 						pvdrCode = forecast[0]["hourly"][0]["symbol"] if forecast[0]["hourly"] else current["symbol"]
@@ -449,6 +455,7 @@ class Weatherinfo:
 						iconCode = self.convert2icon("MSN", pvdrCode)
 						reduced["current"]["yahooCode"] = iconCode.get("yahooCode", "NA") if iconCode else "NA"
 						reduced["current"]["meteoCode"] = iconCode.get("meteoCode", ")") if iconCode else ")"
+						reduced["current"]["pressure"] = "%.0f" % current["baro"]
 						reduced["current"]["temp"] = "%.0f" % current["temp"]
 						reduced["current"]["feelsLike"] = "%.0f" % current["feels"]
 						reduced["current"]["humidity"] = "%.0f" % current["rh"]
@@ -476,6 +483,7 @@ class Weatherinfo:
 							iconCodes = self.convert2icon("MSN", pvdrCode)
 							reduced["forecast"][idx]["yahooCode"] = iconCodes.get("yahooCode", "NA") if iconCodes else "NA"
 							reduced["forecast"][idx]["meteoCode"] = iconCodes.get("meteoCode", ")") if iconCodes else ")"
+							reduced["forecast"][idx]["pressure"] = "%.0f" % forecast[idx]["daily"]["baro"]
 							reduced["forecast"][idx]["minTemp"] = "%.0f" % forecast[idx]["daily"]["tempLo"]
 							reduced["forecast"][idx]["maxTemp"] = "%.0f" % forecast[idx]["daily"]["tempHi"]
 							reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % forecast[idx]["daily"]["feelsHi"]
@@ -507,13 +515,14 @@ class Weatherinfo:
 			elif self.parser and self.mode == "omw":
 				if self.geodata:
 					try:
-						current = self.info["hourly"]
+						hourly = self.info["hourly"]
 						forecast = self.info["daily"]
 						reduced["source"] = "Open-Meteo Weather"
 						location = self.geodata[0].split(", ")
 						reduced["name"] = location[0].split(", ")[0]
 						reduced["longitude"] = str(self.info["longitude"])
 						reduced["latitude"] = str(self.info["latitude"])
+						reduced["pressunit"] = "mbar"
 						reduced["tempunit"] = self.info["hourly_units"]["temperature_2m"]
 						reduced["windunit"] = self.info["hourly_units"]["windspeed_10m"]
 						reduced["precunit"] = self.info["hourly_units"]["precipitation_probability"]
@@ -521,7 +530,7 @@ class Weatherinfo:
 						reduced["visibiliyunit"] = "miles" if self.units == "imperial" else "km"
 						isotime = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0).isoformat()[:16]
 						reduced["current"] = dict()
-						for idx, time in enumerate(current["time"]):  # collect current
+						for idx, time in enumerate(hourly["time"]):  # collect current
 							if isotime in time:
 								reduced["current"]["observationPoint"] = self.createFullname(location)
 								reduced["current"]["observationTime"] = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
@@ -531,22 +540,23 @@ class Weatherinfo:
 								reduced["current"]["sunset"] = sunset.isoformat()
 								now = datetime.now()
 								reduced["current"]["isNight"] = now < sunrise or now > sunset
-								pvdrCode = current["weathercode"][idx]
+								pvdrCode = hourly["weathercode"][idx]
 								reduced["current"]["ProviderCode"] = str(pvdrCode)
 								iconCode = self.convert2icon("OMW", pvdrCode)
 								if iconCode:
 									reduced["current"]["yahooCode"] = iconCode.get("yahooCode", "NA")
 									reduced["current"]["meteoCode"] = iconCode.get("meteoCode", ")")
-								reduced["current"]["temp"] = "%.0f" % current["temperature_2m"][0]
-								reduced["current"]["feelsLike"] = "%.0f" % current["apparent_temperature"][idx]
-								reduced["current"]["humidity"] = "%.0f" % current["relativehumidity_2m"][idx]
-								reduced["current"]["windSpeed"] = "%.0f" % current["windspeed_10m"][idx]
-								windDir = current["winddirection_10m"][idx]
+								reduced["current"]["pressure"] = "%.0f" % self.info["current"]["pressure_msl"]
+								reduced["current"]["temp"] = "%.0f" % hourly["temperature_2m"][0]
+								reduced["current"]["feelsLike"] = "%.0f" % hourly["apparent_temperature"][idx]
+								reduced["current"]["humidity"] = "%.0f" % hourly["relativehumidity_2m"][idx]
+								reduced["current"]["windSpeed"] = "%.0f" % hourly["windspeed_10m"][idx]
+								windDir = hourly["winddirection_10m"][idx]
 								reduced["current"]["windDir"] = str(windDir)
 								reduced["current"]["windDirSign"] = self.directionsign(windDir)
-								reduced["current"]["windGusts"] = "%.0f" % current["wind_gusts_10m"][idx]
-								reduced["current"]["uvIndex"] = "%.0f" % current["uv_index"][idx]
-								reduced["current"]["visibility"] = "%.0f" % round(current["visibility"][idx] / 1000)
+								reduced["current"]["windGusts"] = "%.0f" % hourly["wind_gusts_10m"][idx]
+								reduced["current"]["uvIndex"] = "%.0f" % hourly["uv_index"][idx]
+								reduced["current"]["visibility"] = "%.0f" % round(hourly["visibility"][idx] / 1000)
 								currdate = datetime.fromisoformat(time)
 								reduced["current"]["dayText"] = currdate.strftime(daytextfmt)
 								reduced["current"]["day"] = currdate.strftime("%A")
@@ -554,8 +564,21 @@ class Weatherinfo:
 								reduced["current"]["date"] = currdate.strftime(datefmt)
 								reduced["current"]["maxTemp"] = "%.0f" % forecast["temperature_2m_max"][0]
 								reduced["current"]["minTemp"] = "%.0f" % forecast["temperature_2m_min"][0]
-								reduced["current"]["precipitation"] = "%.0f" % current["precipitation_probability"][idx]
+								reduced["current"]["precipitation"] = "%.0f" % hourly["precipitation_probability"][idx]
 								break
+						todaydate = hourly["time"][0][:10]
+						hourpress, hourcount = 0, 0
+						avpress = []
+						hourlytime = hourly["time"]
+						for idx, daydate in enumerate(hourlytime):  # collect all sealevel pressures and create averages per day
+							if todaydate.startswith(daydate[:10]):
+								hourpress += hourly["pressure_msl"][idx]
+								hourcount += 1
+							else:
+								todaydate = daydate[:10]
+								avpress.append(round(hourpress / hourcount))
+								hourpress, hourcount = 0, 0
+						avpress.append(round(hourpress / hourcount))
 						reduced["forecast"] = dict()
 						for idx in range(7):  # collect forecast of today and next 6 days
 							reduced["forecast"][idx] = dict()
@@ -565,6 +588,7 @@ class Weatherinfo:
 							if iconCode:
 								reduced["forecast"][idx]["yahooCode"] = iconCode.get("yahooCode", "NA")
 								reduced["forecast"][idx]["meteoCode"] = iconCode.get("meteoCode", ")")
+							reduced["forecast"][idx]["pressure"] = "%.0f" % avpress[idx]
 							reduced["forecast"][idx]["minTemp"] = "%.0f" % forecast["temperature_2m_min"][idx]
 							reduced["forecast"][idx]["maxTemp"] = "%.0f" % forecast["temperature_2m_max"][idx]
 							reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % forecast["apparent_temperature_max"][idx]
@@ -575,7 +599,7 @@ class Weatherinfo:
 							reduced["forecast"][idx]["domWindDirSign"] = self.directionsign(windDir)
 							reduced["forecast"][idx]["maxWindGusts"] = "%.0f" % forecast["wind_gusts_10m_max"][idx]
 							reduced["forecast"][idx]["maxUvIndex"] = "%.0f" % forecast["uv_index_max"][idx]
-							reduced["forecast"][idx]["maxVisibility"] = "%.0f" % round(max(current.get("visibility", [] + [0])) / 1000)
+							reduced["forecast"][idx]["maxVisibility"] = "%.0f" % round(max(hourly.get("visibility", [] + [0])) / 1000)
 							reduced["forecast"][idx]["precipitation"] = "%.0f" % forecast["precipitation_probability_max"][idx]
 							currdate = datetime.fromisoformat(forecast["time"][idx])
 							reduced["forecast"][idx]["dayText"] = currdate.strftime(daytextfmt)
@@ -591,11 +615,13 @@ class Weatherinfo:
 			elif self.parser and self.mode == "owm":   #  OpenWeatherMap is DEPRECATED
 				if self.geodata:
 					try:
+						main = self.info["main"]
 						reduced["source"] = "OpenWeatherMap"  # collect current weather data
 						location = self.geodata[0].split(", ")
 						reduced["name"] = location[0].split(", ")[0]
 						reduced["longitude"] = str(self.info["city"]["coord"]["lon"])
 						reduced["latitude"] = str(self.info["city"]["coord"]["lat"])
+						reduced["pressunit"] = "mbar"
 						reduced["tempunit"] = "°F" if self.units == "imperial" else "°C"
 						reduced["windunit"] = "mph" if self.units == "imperial" else "km/h"
 						reduced["precunit"] = "%"
@@ -616,9 +642,10 @@ class Weatherinfo:
 						if iconCode:
 							reduced["current"]["yahooCode"] = iconCode.get("yahooCode", "NA")
 							reduced["current"]["meteoCode"] = iconCode.get("meteoCode", ")")
-						reduced["current"]["temp"] = "%.0f" % self.info["main"]["temp"]
-						reduced["current"]["feelsLike"] = "%.0f" % self.info["main"]["feels_like"]
-						reduced["current"]["humidity"] = "%.0f" % self.info["main"]["humidity"]
+						reduced["current"]["pressure"] = "%.0f" % main["pressure"]
+						reduced["current"]["temp"] = "%.0f" % main["temp"]
+						reduced["current"]["feelsLike"] = "%.0f" % main["feels_like"]
+						reduced["current"]["humidity"] = "%.0f" % main["humidity"]
 						reduced["current"]["windSpeed"] = "%.0f" % (self.info["wind"]["speed"] * 3.6)
 						windDir = self.info["wind"]["deg"]
 						reduced["current"]["windDir"] = str(windDir)
@@ -632,6 +659,7 @@ class Weatherinfo:
 						reduced["current"]["date"] = currdate.strftime(datefmt)
 						reduced["current"]["text"] = self.info["weather"][0]["description"]
 						# inits for today
+						hourpress, hourcount = 0, 0
 						tmin, tmax, fmin, fmax, wmax, gmax, vmax = 88, -88, 88, -88, -88, -88, -88
 						yahoocode, meteocode, text = None, None, None
 						prec, wdir = [], []
@@ -640,9 +668,12 @@ class Weatherinfo:
 						for index, forecast in enumerate(self.info.get("list", [])):  # collect forecast of today and next 5 days
 							main = forecast.get("main", {})
 							if not index:
-								reduced["current"]["minTemp"] = f"{round(main.get("temp_min", 0))}"  # catch the missing data for current weather
+								reduced["current"]["pressure"] = f"{round(main.get("pressure", 0))}"  # catch the missing data for current weather
+								reduced["current"]["minTemp"] = f"{round(main.get("temp_min", 0))}"
 								reduced["current"]["maxTemp"] = f"{round(main.get("temp_max", 0))}"
 								reduced["current"]["precipitation"] = f"{round(forecast.get("pop", 0) * 100)}"
+							hourpress += main.get("pressure", 0)
+							hourcount += 1
 							tmin = min(tmin, main.get("temp_min", 0))
 							tmax = max(tmax, main.get("temp_max", 0))
 							fmin = min(fmin, main.get("feels_like", 0))
@@ -678,6 +709,7 @@ class Weatherinfo:
 										meteocode = iconCode.get("meteoCode", ")")
 								reduced["forecast"][idx]["yahooCode"] = yahoocode
 								reduced["forecast"][idx]["meteoCode"] = meteocode
+								reduced["forecast"][idx]["pressure"] = "%.0f" % round(hourpress / hourcount)
 								reduced["forecast"][idx]["minTemp"] = "%.0f" % tmin
 								reduced["forecast"][idx]["maxTemp"] = "%.0f" % tmax
 								reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % fmin
@@ -695,6 +727,7 @@ class Weatherinfo:
 								reduced["forecast"][idx]["date"] = currdate.strftime(datefmt)
 								reduced["forecast"][idx]["text"] = text
 								# inits for next day
+								hourpress, hourcount = 0, 0
 								tmin, tmax, fmin, fmax, wmax, gmax, vmax = 88, -88, 88, -88, -88, -88, -88
 								yahoocode, meteocode, text = None, None, None
 								prec, wdir = [], []
@@ -705,6 +738,7 @@ class Weatherinfo:
 								reduced["forecast"][idx]["ProviderCode"] = str(pvdrCode)
 								reduced["forecast"][idx]["yahooCode"] = yahoocode if yahoocode else reduced["forecast"][idx - 1]["yahooCode"]
 								reduced["forecast"][idx]["meteoCode"] = meteocode if meteocode else reduced["forecast"][idx - 1]["meteoCode"]
+								reduced["forecast"][idx]["pressure"] = reduced["forecast"][idx - 1]["pressure"]
 								reduced["forecast"][idx]["minTemp"] = "%.0f" % tmin if tmin != 88 else reduced["forecast"][idx - 1]["minTemp"]
 								reduced["forecast"][idx]["maxTemp"] = "%.0f" % tmax if tmax != - 88 else reduced["forecast"][idx - 1]["maxTemp"]
 								reduced["forecast"][idx]["maxFeelsLike"] = "%.0f" % fmin if fmin != 88 else reduced["forecast"][idx - 1]["minFeelsLike"]
@@ -840,7 +874,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v2.7: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v2.8: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
