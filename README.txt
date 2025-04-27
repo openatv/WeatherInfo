@@ -1,6 +1,6 @@
 Weatherinfo for openTV is a multiplatform tool (runs on Enigma2 & Windows and probably many others)
 Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022
-Purpose: get weather forecasts from msnWeather (MSN) and Open-Meteo Weather (OMW)
+Purpose: get weather forecasts from msnWeather (MSN), Open-Meteo Weather (OMW) and OpenWeatherMap (OWM)
 Output : DICT and JSON-file
 ---------------------------------------------------------------------------------------------------------
 This plugin is licensed under the GNU version 3.0 <https://www.gnu.org/licenses/gpl-3.0.en.html>.
@@ -33,6 +33,9 @@ usage:
 WI = WeatherInfo(mode="msn")                # initialization for "msn" and "omw" (no API-key required)
 WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 ---------------------------------------------------------------------------------------------------------
+usage for OWM only:
+WI = WeatherInfo(mode="owm", apikey="my_apikey")       # initialization for "owm" (API-key required)
+---------------------------------------------------------------------------------------------------------
 common usage for all:
 geolist = WI.getCitylist(cityname, scheme)  # get search results (max. 10) from cityname
 WI.setmode(newmode, apikey)         # change mode if desired (is already part of the initialization)
@@ -42,7 +45,7 @@ WI.writejson(filename)              # writes full DICT as full JSON-string as fi
 DICT = WI.getreducedinfo()          # get reduced DICT
 WI.writereducedjson(filename)       # get reduced DICT & write reduced JSON-string as file
 WI.error                            # returns None when everything is OK otherwise a detailed error msg
-WI.SOURCES = ["msn", "omw"]         # supported sourcecodes (the order must not be changed)
+WI.SOURCES = ["msn", "owm", "omw"]  # supported sourcecodes (the order must not be changed)
 WI.DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be changed)
 ---------------------------------------------------------------------------------------------------------
 Interactive call is also possible by setting WI.start(..., callback=None) # example: see "def main(argv)"
