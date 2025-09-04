@@ -1,4 +1,4 @@
-Weatherinfo for openTV is a multiplatform tool (runs on Enigma2 & Windows and probably many others)
+Weatherinfo for openTV is a multiplatform tool (runs on Enigma2, Windows and probably many others)
 Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022
 Purpose: get weather forecasts from msnWeather (MSN), Open-Meteo Weather (OMW) and OpenWeatherMap (OWM)
 Output : DICT and JSON-file
