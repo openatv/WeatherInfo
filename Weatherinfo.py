@@ -518,7 +518,7 @@ class Weatherinfo:
 							currdate = currdate + timedelta(1)
 					except Exception as err:
 						self.error = "[%s] ERROR in module 'getreducedinfo#msn': general error. %s" % (wiglobals.MODULE_NAME, str(err))
-						return reduced
+						return
 
 			elif self.parser and self.mode == "omw":
 				if self.geodata:
