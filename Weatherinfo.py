@@ -482,7 +482,7 @@ class Weatherinfo:
 						reduced["current"]["shortDay"] = currdate.strftime("%a")
 						reduced["current"]["date"] = currdate.strftime(datefmt)
 						reduced["current"]["text"] = forecast[0]["hourly"][0]["pvdrCap"] if forecast[0]["hourly"] else current["capAbbr"]
-						reduced["current"]["raintext"] = self.info["responses"][0]["weather"][0]["current"]["cap"]
+						reduced["current"]["raintext"] = self.info["responses"][0]["weather"][0]["nowcasting"]["shortSummary"]
 						reduced["forecast"] = {}
 						for idx in range(7):  # collect forecast of today and next 6 days
 							reduced["forecast"][idx] = {}
