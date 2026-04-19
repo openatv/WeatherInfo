@@ -509,10 +509,10 @@ class Weatherinfo:
 							reduced["forecast"][idx]["shortDay"] = currdate.strftime("%a")
 							reduced["forecast"][idx]["date"] = currdate.strftime(datefmt)
 							reduced["forecast"][idx]["text"] = forecast[idx]["daily"]["pvdrCap"]
-							reduced["forecast"][idx]["daySummary0"] = forecast[idx]["daily"]["day"]["summaries"][0]
-							reduced["forecast"][idx]["daySummary1"] = forecast[idx]["daily"]["day"]["summaries"][1].replace("°.", " %s." % tempunit)
-							reduced["forecast"][idx]["nightSummary0"] = forecast[idx]["daily"]["night"]["summaries"][0]
-							reduced["forecast"][idx]["nightSummary1"] = forecast[idx]["daily"]["night"]["summaries"][1].replace("°.", " %s." % tempunit)
+							reduced["forecast"][idx]["daySummary0"] = forecast[idx]["daily"]["day"]["summaries"][0].strip()
+							reduced["forecast"][idx]["daySummary1"] = forecast[idx]["daily"]["day"]["summaries"][1].strip().replace("°.", " %s." % tempunit)
+							reduced["forecast"][idx]["nightSummary0"] = forecast[idx]["daily"]["night"]["summaries"][0].strip()
+							reduced["forecast"][idx]["nightSummary1"] = forecast[idx]["daily"]["night"]["summaries"][1].strip().replace("°.", " %s." % tempunit)
 							umbrellaIndex = self.info["responses"][0]["weather"][0]["lifeDaily"]["days"][0]["umbrellaIndex"]
 							reduced["forecast"][idx]["umbrellaIndex"] = umbrellaIndex["longSummary2"] if "longSummary2" in umbrellaIndex else umbrellaIndex["summary"]
 							currdate = currdate + timedelta(1)
@@ -886,7 +886,7 @@ def main(argv):
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v3.0: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v3.1: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
