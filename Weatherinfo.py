@@ -449,7 +449,7 @@ class Weatherinfo:
 			if self.parser and self.mode == "msn":
 				if self.geodata:
 					try:
-						no_dt = datetime(1900, 1, 1)
+						empty_iso = datetime(1900, 1, 1).isoformat()
 						source = self.info.get("responses", [{}])[0].get("source", {})
 						current = self.info.get("responses", [{}])[0].get("weather", [{}])[0].get("current", {})
 						forecast = self.info.get("responses", [{}])[0].get("weather", [{}])[0].get("forecast", [{}]).get("days", {})
@@ -467,18 +467,18 @@ class Weatherinfo:
 						reduced["visibiliyunit"] = self.info.get("units", {}).get("distance", "")
 						reduced["current"] = {}
 						reduced["current"]["observationPoint"] = self.create_fullname(location)
-						currdate = datetime.fromisoformat(current.get("created", no_dt)).replace(tzinfo=None)
+						currdate = datetime.fromisoformat(current.get("created", empty_iso)).replace(tzinfo=None)
 						reduced["current"]["observationTime"] = currdate.isoformat()
-						sunrise = datetime.fromisoformat(forecast[0].get("almanac", {}).get("sunrise", no_dt)).replace(tzinfo=None)
+						sunrise = datetime.fromisoformat(forecast[0].get("almanac", {}).get("sunrise", empty_iso)).replace(tzinfo=None)
 						reduced["current"]["sunrise"] = sunrise.isoformat()
-						sunset = datetime.fromisoformat(forecast[0].get("almanac", {}).get("sunset", no_dt)).replace(tzinfo=None)
+						sunset = datetime.fromisoformat(forecast[0].get("almanac", {}).get("sunset", empty_iso)).replace(tzinfo=None)
 						reduced["current"]["sunset"] = sunset.isoformat()
-						moonrise = datetime.fromisoformat(forecast[0].get("almanac", {}).get("moonrise", no_dt)).replace(tzinfo=None)
+						moonrise = datetime.fromisoformat(forecast[0].get("almanac", {}).get("moonrise", empty_iso)).replace(tzinfo=None)
 						reduced["current"]["moonrise"] = moonrise.isoformat()
-						moonset = datetime.fromisoformat(forecast[0].get("almanac", {}).get("moonset", no_dt)).replace(tzinfo=None)
+						moonset = datetime.fromisoformat(forecast[0].get("almanac", {}).get("moonset", empty_iso)).replace(tzinfo=None)
 						reduced["current"]["moonset"] = moonset.isoformat()
-						now = datetime.now()
-						reduced["current"]["isNight"] = now < sunrise or now > sunset
+						now_dt = datetime.now()
+						reduced["current"]["isNight"] = now_dt < sunrise or now_dt > sunset
 						pvdrCode = forecast[0].get("hourly", [{}])[0].get("symbol", current.get("symbol", ""))
 						reduced["current"]["ProviderCode"] = pvdrCode
 						iconCode = self.convert2icon("MSN", pvdrCode)
@@ -571,8 +571,8 @@ class Weatherinfo:
 								reduced["current"]["sunrise"] = sunrise.isoformat()
 								sunset = datetime.fromisoformat(forecast.get("sunset", [""])[0])
 								reduced["current"]["sunset"] = sunset.isoformat()
-								now = datetime.now()
-								reduced["current"]["isNight"] = now < sunrise or now > sunset
+								now_dt = datetime.now()
+								reduced["current"]["isNight"] = now_dt < sunrise or now_dt > sunset
 								pvdrCode = hourly.get("weathercode", [])[idx]
 								reduced["current"]["ProviderCode"] = str(pvdrCode)
 								iconCode = self.convert2icon("OMW", pvdrCode)
@@ -660,7 +660,7 @@ class Weatherinfo:
 						reduced["precunit"] = "%"
 						reduced["visibiliyunit"] = "miles" if self.units == "imperial" else "km"
 						reduced["current"] = {}
-						now = datetime.now()
+						now_dt = datetime.now()
 						reduced["current"]["observationPoint"] = self.create_fullname(location)
 						currdate = datetime.fromtimestamp(self.info.get("dt", 0))
 						reduced["current"]["observationTime"] = currdate.isoformat()
@@ -668,7 +668,7 @@ class Weatherinfo:
 						sunset = datetime.fromtimestamp(self.info.get("city", {}).get("sunset", 0))
 						reduced["current"]["sunrise"] = sunrise.isoformat()
 						reduced["current"]["sunset"] = sunset.isoformat()
-						reduced["current"]["isNight"] = now < sunrise or now > sunset
+						reduced["current"]["isNight"] = now_dt < sunrise or now_dt > sunset
 						pvdrCode = (self.info.get("weather", [{}])[0]).get("id", "")
 						reduced["current"]["ProviderCode"] = str(pvdrCode)
 						iconCode = self.convert2icon("OWM", pvdrCode)
@@ -911,7 +911,7 @@ def main(argv):  # noqa: C901
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v3.3: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v3.4: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
