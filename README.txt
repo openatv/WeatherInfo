@@ -1,5 +1,5 @@
 Weatherinfo for openTV is a multiplatform tool (runs on Enigma2, Windows and probably many others)
-Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022
+Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022 - 2026
 Purpose: get weather forecasts from msnWeather (MSN), Open-Meteo Weather (OMW) and OpenWeatherMap (OWM)
 Output : DICT and JSON-file
 ---------------------------------------------------------------------------------------------------------
@@ -29,23 +29,24 @@ geocode = "13.4105,52.5244"                 # string: consisting of "longitude,l
 geodata = ("Berlin, DE", 13.4105,52.5244)   # tuple: consisting of cityname and its "geocode"
 geolist = ["city1",lon,lat),("city2",...)]  # list: of tuples "geodata" (e.g. search results)
 ---------------------------------------------------------------------------------------------------------
-usage:
+usage for MSN and OpenMeteo:
 WI = WeatherInfo(mode="msn")                # initialization for "msn" and "omw" (no API-key required)
 WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 ---------------------------------------------------------------------------------------------------------
 usage for OWM only:
-WI = WeatherInfo(mode="owm", apikey="my_apikey")       # initialization for "owm" (API-key required)
+WI = Weatherinfo(mode="owm", apikey="my_apikey")       # initialization for "owm" (API-key required)
+WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
 ---------------------------------------------------------------------------------------------------------
 common usage for all:
-geolist = WI.getCitylist(cityname, scheme)  # get search results (max. 10) from cityname
-WI.setmode(newmode, apikey)         # change mode if desired (is already part of the initialization)
-WI.stop()                           # remove callback and let thread run out
-DICT = WI.getinfo()                 # alternatively: DICT = WI.info
-WI.writejson(filename)              # writes full DICT as full JSON-string as file
-DICT = WI.getreducedinfo()          # get reduced DICT
-WI.writereducedjson(filename)       # get reduced DICT & write reduced JSON-string as file
-WI.error                            # returns None when everything is OK otherwise a detailed error msg
-WI.SOURCES = ["msn", "owm", "omw"]  # supported sourcecodes (the order must not be changed)
-WI.DESTINATIONS = ["yahoo", "meteo"]  # supported iconcodes (the order must not be changed)
+geolist = WI.get_citylist(cityname, scheme)  # get search results (max. 10) from cityname
+WI.set_mode(newmode, apikey)         # change mode if desired (is already part of the initialization)
+WI.stop()                            # remove callback and let thread run out
+DICT = WI.get_info()                 # alternatively: DICT = WI.info
+WI.write_json(filename)              # writes full DICT as full JSON-string as file
+DICT = WI.get_reduced_info()         # get reduced DICT
+WI.write_reduced_json(filename)      # get reduced DICT & write reduced JSON-string as file
+WI.error                             # returns None when everything is OK otherwise a detailed error msg
+WI.SOURCES = ["msn", "owm", "omw"]   # supported sourcecodes (the order must not be changed)
+WI.DESTINATIONS = ["yahoo", "meteo"] # supported iconcodes (the order must not be changed)
 ---------------------------------------------------------------------------------------------------------
 Interactive call is also possible by setting WI.start(..., callback=None) # example: see "def main(argv)"
