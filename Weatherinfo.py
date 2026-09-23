@@ -166,11 +166,11 @@ class Weatherinfo:
 					"owm": self.owm_parser
 					}.get(newmode)
 				if newmode == "owm" and not apikey:
-					self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'setmode': API-Key for mode '{newmode}' is missing!"
+					self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'set_mode': API-Key for mode '{newmode}' is missing!"
 					self.parser = None
 					return self.error
 		else:
-			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'setmode': unknown mode '{newmode}'"
+			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'set_mode': unknown mode '{newmode}'"
 			self.parser = None
 			return self.error
 
