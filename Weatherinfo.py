@@ -292,7 +292,7 @@ class Weatherinfo:
 					break
 			return cityname, country
 
-	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", reduced=False, callback=None):  # cityID was left only for compatibility reasons
+	def start(self, geodata=None, units="metric", scheme="de-de", reduced=False, callback=None, cityID=None):  # cityID was left only for compatibility reasons
 		self.error = ""
 		self.geodata = ("", 0, 0) if not geodata else geodata
 		self.units = units.lower()

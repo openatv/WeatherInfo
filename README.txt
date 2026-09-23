@@ -31,11 +31,11 @@ geolist = ["city1",lon,lat),("city2",...)]  # list: of tuples "geodata" (e.g. se
 ---------------------------------------------------------------------------------------------------------
 usage for MSN and OpenMeteo:
 WI = WeatherInfo(mode="msn")                # initialization for "msn" and "omw" (no API-key required)
-WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
+WI.start(geodata=geodata, units, scheme, reduced=True, callback=MyCallback, cityID=None) # cityID unused
 ---------------------------------------------------------------------------------------------------------
 usage for OWM only:
 WI = Weatherinfo(mode="owm", apikey="my_apikey")       # initialization for "owm" (API-key required)
-WI.start(geodata=geodata, cityID=None, units, scheme, reduced=True, callback=MyCallback)    # by geodata
+WI.start(geodata=geodata, units, scheme, reduced=True, callback=MyCallback, cityID=None) # cityID unused
 ---------------------------------------------------------------------------------------------------------
 common usage for all:
 geolist = WI.get_citylist(cityname, scheme)  # get search results (max. 10) from cityname
