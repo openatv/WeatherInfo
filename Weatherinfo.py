@@ -180,7 +180,7 @@ class Weatherinfo:
 	def convert2icon(self, src, code):
 		self.error = ""
 		src = src.lower()
-		if code is None:
+		if not code:
 			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'convert2icon': input code value is 'None'"
 			print(self.error)
 			return
@@ -252,7 +252,7 @@ class Weatherinfo:
 			cityname, country = self.separate_city_country(cityname)
 			json_data = {}
 			for city in [cityname, cityname.split(" ")[0]]:
-				link = "http://api.openweathermap.org/geo/1.0/direct?q={}{}&lang={}&limit={}&appid={}".format(city, "" if country is None else f",{country}", lang, count, self.apikey)
+				link = "http://api.openweathermap.org/geo/1.0/direct?q={}{}&lang={}&limit={}&appid={}".format(city, "" if not country else f",{country}", lang, count, self.apikey)
 				json_data = self.apiserver(link)
 				if json_data:
 					break
@@ -294,7 +294,7 @@ class Weatherinfo:
 
 	def start(self, geodata=None, cityID=None, units="metric", scheme="de-de", reduced=False, callback=None):  # cityID was left only for compatibility reasons
 		self.error = ""
-		self.geodata = ("", 0, 0) if geodata is None else geodata
+		self.geodata = ("", 0, 0) if not geodata else geodata
 		self.units = units.lower()
 		self.scheme = scheme.lower()
 		self.callback = callback
@@ -479,7 +479,8 @@ class Weatherinfo:
 						reduced["current"]["moonset"] = moonset.isoformat()
 						now_dt = datetime.now()
 						reduced["current"]["isNight"] = now_dt < sunrise or now_dt > sunset
-						pvdrCode = forecast[0].get("hourly", [{}])[0].get("symbol", current.get("symbol", ""))
+						hourly = forecast[0].get("hourly", [{}])
+						pvdrCode = hourly[0].get("symbol", current.get("symbol", "")) if hourly else current.get("symbol", "")
 						reduced["current"]["ProviderCode"] = pvdrCode
 						iconCode = self.convert2icon("MSN", pvdrCode)
 						reduced["current"]["yahooCode"] = iconCode.get("yahooCode", "NA") if iconCode else "NA"
@@ -803,7 +804,7 @@ class Weatherinfo:
 		reduced = self.get_reduced_info()
 		if self.error:
 			return
-		if reduced is None:
+		if not reduced:
 			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'write_reduced_json': no data found."
 			return
 		with open(filename, "w") as f:
@@ -911,7 +912,7 @@ def main(argv):  # noqa: C901
 	geodata = None
 	info = None
 	geodata = ("", 0, 0)
-	helpstring = "Weatherinfo v3.4: try 'python Weatherinfo.py -h' for more information"
+	helpstring = "Weatherinfo v3.5: try 'python Weatherinfo.py -h' for more information"
 	opts = None
 	args = None
 	try:
