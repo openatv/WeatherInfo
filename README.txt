@@ -30,10 +30,10 @@ geodata = ("Berlin, DE", 13.4105,52.5244)   # tuple: consisting of cityname and 
 geolist = ["city1",lon,lat),("city2",...)]  # list: of tuples "geodata" (e.g. search results)
 ---------------------------------------------------------------------------------------------------------
 usage for MSN and OpenMeteo:
-WI = WeatherInfo(mode="msn")                # initialization for "msn" and "omw" (no API-key required)
+WI = Weatherinfo(mode="msn")                # initialization for "msn" and "omw" (no API-key required)
 WI.start(geodata=geodata, units, scheme, reduced=True, callback=MyCallback, cityID=None) # cityID unused
 ---------------------------------------------------------------------------------------------------------
-usage for OWM only:
+usage for OpenWeatherMap:
 WI = Weatherinfo(mode="owm", apikey="my_apikey")       # initialization for "owm" (API-key required)
 WI.start(geodata=geodata, units, scheme, reduced=True, callback=MyCallback, cityID=None) # cityID unused
 ---------------------------------------------------------------------------------------------------------

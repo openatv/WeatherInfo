@@ -1,7 +1,7 @@
 #########################################################################################################
 #                                                                                                       #
 #  Weatherinfo for openATV is a multiplatform tool (runs on Enigma2 & Windows and probably many others) #
-#  Coded by Mr.Servo @ openATV and jbleyel @ openATV (c) 2022-2026                                      #
+#  Coded by Mr.Servo @openATV and jbleyel @openATV (c) 2022-2026                                        #
 #  Learn more about the tool by running it in the shell: "python Weatherinfo.py -h"                     #
 #  -----------------------------------------------------------------------------------------------------#
 #  This plugin is licensed under the GNU version 3.0 <https://www.gnu.org/licenses/gpl-3.0.en.html>.    #
@@ -22,8 +22,8 @@ from twisted.internet.reactor import callInThread
 
 class WIglobals:
 	MODULE_NAME = __name__.split(".")[-1]
-	SOURCES = ("msn", "omw", "owm")  # supported sourcecodes (the order must not be changed)
-	DESTINATIONS = ("yahoo", "meteo")  # supported iconcodes (the order must not be changed)
+	SOURCES = ("msn", "omw", "owm")  # supported source codes (the order must not be changed)
+	DESTINATIONS = ("yahoo", "meteo")  # supported icon codes (the order must not be changed)
 
 
 wiglobals = WIglobals()
@@ -180,7 +180,7 @@ class Weatherinfo:
 	def convert2icon(self, src, code):
 		self.error = ""
 		src = src.lower()
-		if not code:
+		if code is None:
 			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'convert2icon': input code value is 'None'"
 			print(self.error)
 			return
@@ -241,8 +241,8 @@ class Weatherinfo:
 					longitude = hit.get("longitude", "")
 					latitude = hit.get("latitude", "")
 					citylist.append((f"{cityname}{admin1}{admin2}{admin3}{country}", longitude, latitude))
-			except Exception as err:
-				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_citylist.owm': general error. {str(err)}"
+			except Exception as err_msg:
+				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_citylist.owm': general error. {err_msg}"
 				return
 
 		elif self.mode == "owm":
@@ -273,8 +273,8 @@ class Weatherinfo:
 					state = ", {}".format(hit.get("state", ""))
 					country = ", {}".format(hit.get("country", "").upper())
 					citylist.append((f"{cityname}{state}{country}", hit.get("lon", 0), hit.get("lat", 0)))
-			except Exception as err:
-				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_citylist.owm': general error. {str(err)}"
+			except Exception as err_msg:
+				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_citylist.owm': general error. {err_msg}"
 				return
 
 		else:
@@ -329,8 +329,8 @@ class Weatherinfo:
 				response = get(link, headers=self.headers, params=params, timeout=(3.05, 6))
 				response.raise_for_status()
 				json_data = response.json()
-			except exceptions.RequestException as err:
-				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'apiserver': '{str(err)}'"
+			except exceptions.RequestException as err_msg:
+				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'apiserver': '{err_msg}'"
 		else:
 			json_data = {}
 			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'apiserver': missing link."
@@ -541,8 +541,8 @@ class Weatherinfo:
 							umbrellaIndex = self.info.get("responses", [{}])[0].get("weather", [{}])[0].get("lifeDaily", {}).get("days", [{}])[0].get("umbrellaIndex", {})
 							reduced["forecast"][idx]["umbrellaIndex"] = umbrellaIndex.get("longSummary2", umbrellaIndex.get("summary", ""))
 							currdate = currdate + timedelta(1)
-					except Exception as err:
-						self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#msn': general error. {str(err)}"
+					except Exception as err_msg:
+						self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#msn': general error. {err_msg}"
 						return
 
 			elif self.parser and self.mode == "omw":
@@ -640,8 +640,8 @@ class Weatherinfo:
 							reduced["forecast"][idx]["day"] = currdate.strftime("%A")
 							reduced["forecast"][idx]["shortDay"] = currdate.strftime("%a")
 							reduced["forecast"][idx]["date"] = currdate.strftime(datefmt)
-					except Exception as err:
-						self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#omw': general error. {str(err)}"
+					except Exception as err_msg:
+						self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#omw': general error. {err_msg}"
 						return
 				else:
 					self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#omw': missing geodata."
@@ -788,8 +788,8 @@ class Weatherinfo:
 								reduced["forecast"][idx]["shortDay"] = nextdate.strftime("%a")
 								reduced["forecast"][idx]["date"] = nextdate.strftime(datefmt)
 								reduced["forecast"][idx]["text"] = text if text else reduced.get("forecast", {})[idx - 1]["text"]
-					except Exception as err:
-						self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#owm': general error. {str(err)}"
+					except Exception as err_msg:
+						self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#owm': general error. {err_msg}"
 						return
 				else:
 					self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'get_reduced_info#owm': missing geodata."
@@ -817,8 +817,8 @@ class Weatherinfo:
 			try:
 				with open(filename, "w") as f:
 					dump(self.info, f)
-			except Exception as err:
-				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'write_json': {str(err)}"
+			except Exception as err_msg:
+				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'write_json': {err_msg}"
 		else:
 			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'write_json': no data found."
 
