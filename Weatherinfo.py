@@ -180,7 +180,7 @@ class Weatherinfo:
 	def convert2icon(self, src, code):
 		self.error = ""
 		src = src.lower()
-		if code is None:
+		if code is None or code == "":
 			self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'convert2icon': input code value is 'None'"
 			print(self.error)
 			return
