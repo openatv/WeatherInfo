@@ -11,12 +11,11 @@
 #                                                                                                       #
 #########################################################################################################
 
-from sys import exit, argv
-from json import dump
 from datetime import datetime, timedelta
-from requests import get, exceptions
-from getopt import getopt, GetoptError
+from getopt import GetoptError, getopt
+from json import dump
 from random import choice
+from sys import argv, exit
 from twisted.internet.reactor import callInThread
 
 
@@ -322,6 +321,9 @@ class Weatherinfo:
 		self.callback = None
 
 	def apiserver(self, link, params=None):
+		# Load HTTP support with the weather request, outside normal GUI startup.
+		from requests import get
+		from requests.exceptions import RequestException
 		self.error = ""
 		json_data = {}
 		if link:
@@ -329,7 +331,7 @@ class Weatherinfo:
 				response = get(link, headers=self.headers, params=params, timeout=(3.05, 6))
 				response.raise_for_status()
 				json_data = response.json()
-			except exceptions.RequestException as err_msg:
+			except RequestException as err_msg:
 				self.error = f"[{wiglobals.MODULE_NAME}] ERROR in module 'apiserver': '{err_msg}'"
 		else:
 			json_data = {}
